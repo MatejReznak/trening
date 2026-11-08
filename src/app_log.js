@@ -51,7 +51,8 @@ async function gh(path,opt){
 function mergeDB(a,b){const m=new Map();[...a.e,...b.e].forEach(x=>{const o=m.get(x.id);if(!o||(x.u||0)>(o.u||0))m.set(x.id,x);});
   const cfg=((a.cfg&&a.cfg.u)||0)>=((b.cfg&&b.cfg.u)||0)?a.cfg:b.cfg;const push=Object.assign({},a.push||{});Object.entries(b.push||{}).forEach(([k,v])=>{if(!push[k]||(v.u||0)>(push[k].u||0))push[k]=v;});
   const body={},bb=Object.assign({},a.body||{});Object.entries(b.body||{}).forEach(([k,v])=>{if(!bb[k]||(v.u||0)>(bb[k].u||0))bb[k]=v;});
-  return {v:1,e:[...m.values()],cfg:cfg||{},push,body:bb};}
+  const vapid=((a.vapid&&a.vapid.u)||0)>=((b.vapid&&b.vapid.u)||0)?a.vapid:b.vapid;
+  return Object.assign({v:1,e:[...m.values()],cfg:cfg||{},push,body:bb},vapid?{vapid}:{});}
 async function sync(){
   if(!SC.token)return;if(busy){again=true;return;}busy=true;setSync('Synchronizujem…');
   try{

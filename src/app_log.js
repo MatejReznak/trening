@@ -150,19 +150,19 @@ function dedupe(){const keep=new Map();let ch=false;
 function refreshLog(){dedupe();RECS={m:recFor('m'),t:recFor('t')};renderToday();renderCal();renderCharts();renderPlan();}
 function renderToday(){const el=document.getElementById('tdDate');if(el)el.textContent=fmtD(today());}
 /* projected recommended training days (1 rest day between, max 3 per week) */
-function recDays(w){const t=today();const tr=entries(w).filter(x=>x.t==='train').map(x=>x.d);const set=new Set(tr);
+function recDays(w,until){const t=today();until=until||addDays(t,42);const tr=entries(w).filter(x=>x.t==='train').map(x=>x.d);const set=new Set(tr);
   let last=tr.filter(d=>d<t).pop();const out=new Set();const wc={};tr.forEach(d=>{const m=monday(d);wc[m]=(wc[m]||0)+1;});
-  for(let k=0;k<42;k++){const d=addDays(t,k);if(set.has(d)){last=d;continue;}const m=monday(d);
+  for(let k=0;k<4000;k++){const d=addDays(t,k);if(d>until)break;if(set.has(d)){last=d;continue;}const m=monday(d);
     if((!last||daysBetween(last,d)>=2)&&(wc[m]||0)<3){out.add(d);last=d;wc[m]=(wc[m]||0)+1;}}
   return out;}
-let RD={m:new Set(),t:new Set()};
+let RD={m:new Set(),t:new Set()},RDend='';
 const MES=['január','február','marec','apríl','máj','jún','júl','august','september','október','november','december'];
 let calYM=null,calSel=null;
 function vs(o){const k=Object.keys(VARI).filter(v=>o[v]);return k.length?' ('+k.map(v=>VARI[v].i+o[v]).join(' ')+')':'';}
-function renderCal(){const el=document.getElementById('cal');if(!el)return;const t=today();RD={m:recDays('m'),t:recDays('t')};if(!calSel)calSel=t;
+function renderCal(){const el=document.getElementById('cal');if(!el)return;const t=today();if(!calSel)calSel=t;
   if(!calYM)calYM=t.slice(0,7);const [Y,M]=calYM.split('-').map(Number);
   const first=`${calYM}-01`;const last=dstr(new Date(Y,M,0));const start=monday(first);const end=addDays(monday(last),6);
-  const isCur=calYM===t.slice(0,7);
+  RD={m:recDays('m',end),t:recDays('t',end)};RDend=end;const isCur=calYM===t.slice(0,7);
   let h=`<div class="calnav"><button type="button" class="cnb" data-cm="-1" aria-label="Predchádzajúci mesiac">‹</button><b>${MES[M-1]} ${Y}</b><button type="button" class="cnb" data-cm="1" aria-label="Ďalší mesiac">›</button></div>`+
     `<div class="caltd"><span>Dnes je <b>${fmtD(t)}${Y!==+t.slice(0,4)||!isCur?' '+t.slice(0,4):''}</b></span>${isCur?'':'<button type="button" class="cnt" data-cm="0">↩ Späť na dnes</button>'}</div>`;
   h+='<div class="calh">'+['Po','Ut','St','Št','Pi','So','Ne'].map(x=>`<span>${x}</span>`).join('')+'</div><div class="calg">';
@@ -196,7 +196,7 @@ function dayRec(ds){const t=today();if(ds<t)return '';
   const per={};['m','t'].forEach(w=>{let L;const tr=live().find(x=>x.who===w&&x.d===ds&&x.t==='train');
     if(ds===t){const R=RECS[w];L=[...R.lines,`<span class="mute">${R.week}${R.next?' · '+R.next:''} · cyklus: týždeň ${R.wk}/4${R.deload?' (ľahší)':''}</span>`];if(R.lvlUp)L.push(`<b class="up">${R.lvlUp}</b>`);}
     else if(tr)L=['✅ Tréning naplánovaný.'];
-    else L=[RD[w].has(ds)?'💪 Vhodný deň na tréning.':'😴 Voľno od posilňovania – prechádzka, plávanie, SM systém alebo turistika podľa chuti.'];
+    else L=[(ds>RDend?recDays(w,ds):RD[w]).has(ds)?'💪 Vhodný deň na tréning.':'😴 Voľno od posilňovania – prechádzka, plávanie, SM systém alebo turistika podľa chuti.'];
     per[w]=L;});
   if(per.m.join()===per.t.join())return `<div class="dayrec both"><p><b>Mama aj tato</b></p>${per.m.map(l=>`<p>${l}</p>`).join('')}</div>`;
   return ['m','t'].map(w=>`<div class="dayrec ${w}"><p><b>${WHO2[w]}</b></p>${per[w].map(l=>`<p>${l}</p>`).join('')}</div>`).join('');}

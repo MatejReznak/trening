@@ -135,12 +135,38 @@ doseHTML=function(ex,who){if(ex.both)return null;const D=doseOf(ex,who);
 function refreshLog(){RECS={m:recFor('m'),t:recFor('t')};renderToday();renderCal();renderCharts();renderPlan();}
 function renderToday(){const el=document.getElementById('today');if(!el)return;
   el.innerHTML=['m','t'].map(w=>{const R=RECS[w];return `<div class="tdy ${w}"><h4>${WHO2[w]} <span class="st ${R.status}">${{go:'tréning',rest:'voľno',done:'hotovo'}[R.status]}</span></h4>${R.lines.map(l=>`<p>${l}</p>`).join('')}<p class="mute">${R.week}${R.next?' · '+R.next:''}</p><p class="mute">Cyklus: týždeň ${R.wk} zo 4${R.deload?' (ľahší týždeň)':''}</p>${R.lvlUp?`<p class="up">${R.lvlUp}</p>`:''}</div>`;}).join('');}
-function renderCal(){const el=document.getElementById('cal');if(!el)return;const t=today();const start=addDays(monday(t),-28);let h='<div class="calh"><span></span>'+['Po','Ut','St','Št','Pi','So','Ne'].map(x=>`<span>${x}</span>`).join('')+'</div>';
-  for(let w=0;w<5;w++){h+='<div class="calr"><span class="wkl">'+fmtD(addDays(start,w*7)).split(' ')[1]+'</span>';for(let d=0;d<7;d++){const ds=addDays(start,w*7+d);const E=live().filter(x=>x.d===ds);
+const MES=['január','február','marec','apríl','máj','jún','júl','august','september','október','november','december'];
+let calYM=null,calSel=null;
+function renderCal(){const el=document.getElementById('cal');if(!el)return;const t=today();
+  if(!calYM)calYM=t.slice(0,7);const [Y,M]=calYM.split('-').map(Number);
+  const first=`${calYM}-01`;const last=dstr(new Date(Y,M,0));const start=monday(first);const end=addDays(monday(last),6);
+  const isCur=calYM===t.slice(0,7);
+  let h=`<div class="calnav"><button type="button" class="cnb" data-cm="-1" aria-label="Predchádzajúci mesiac">‹</button><b>${MES[M-1]} ${Y}</b><button type="button" class="cnb" data-cm="1" aria-label="Ďalší mesiac">›</button></div>`+
+    `<div class="caltd"><span>Dnes je <b>${fmtD(t)}${Y!==+t.slice(0,4)||!isCur?' '+t.slice(0,4):''}</b></span>${isCur?'':'<button type="button" class="cnt" data-cm="0">↩ Späť na dnes</button>'}</div>`;
+  h+='<div class="calh">'+['Po','Ut','St','Št','Pi','So','Ne'].map(x=>`<span>${x}</span>`).join('')+'</div><div class="calg">';
+  const L=live();let nTr={m:0,t:0};
+  for(let ds=start;ds<=end;ds=addDays(ds,1)){const E=L.filter(x=>x.d===ds);const inM=ds.slice(0,7)===calYM;
+    if(inM)['m','t'].forEach(w=>{if(E.some(x=>x.who===w&&x.t==='train'))nTr[w]++;});
     const ic=who=>[...new Set(E.filter(x=>x.who===who).map(x=>ACT[x.t].i))].join('');
-    h+=`<button type="button" class="cd${ds===t?' tod':''}${ds>t?' fut':''}" data-d="${ds}"><i>${dparse(ds).getDate()}</i><b class="m">${ic('m')}</b><b class="t">${ic('t')}</b></button>`;}h+='</div>';}
-  el.innerHTML=h+'<div class="leg">'+Object.values(ACT).map(a=>a.i+' '+a.n).join(' · ')+' · <b class="m">■</b> mama <b class="t">■</b> tato</div><div id="dayList"></div>';}
-document.addEventListener('click',e=>{const b=e.target.closest('.cd');if(!b)return;showDay(b.dataset.d);});
+    h+=`<button type="button" class="cd${ds===t?' tod':''}${ds>t?' fut':''}${inM?'':' out'}${ds===calSel?' sel':''}" data-d="${ds}"><i>${dparse(ds).getDate()}</i><b class="m">${ic('m')}</b><b class="t">${ic('t')}</b></button>`;}
+  h+='</div>';
+  el.innerHTML=h+`<p class="mute calsum">${MES[M-1][0].toUpperCase()+MES[M-1].slice(1)}: tréningy – mama ${nTr.m}×, tato ${nTr.t}×</p>`+
+    '<div class="leg">'+Object.values(ACT).map(a=>a.i+' '+a.n).join(' · ')+' · <b class="m">■</b> mama <b class="t">■</b> tato</div><div id="dayList"></div>';
+  if(calSel&&calSel.slice(0,7)===calYM)showDay(calSel);}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-cm]');if(!b)return;const k=+b.dataset.cm;
+  if(!k){calYM=today().slice(0,7);calSel=today();}else{const [Y,M]=calYM.split('-').map(Number);const d=new Date(Y,M-1+k,1);calYM=dstr(d).slice(0,7);}
+  renderCal();});
+/* swipe left/right on calendar */
+(function(){let x0=null,y0=null;document.addEventListener('touchstart',e=>{const c=e.target.closest('#cal');if(!c){x0=null;return;}x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});
+  document.addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0;x0=null;
+    if(Math.abs(dx)>60&&Math.abs(dx)>2*Math.abs(dy)){const [Y,M]=calYM.split('-').map(Number);calYM=dstr(new Date(Y,M-1+(dx<0?1:-1),1)).slice(0,7);renderCal();}},{passive:true});})();
+/* new day (app left open over midnight / reopened next day) → refresh dates */
+let _lastDay=today();
+function dayCheck(){const t=today();if(t===_lastDay)return;const was=_lastDay;_lastDay=t;
+  const q=document.getElementById('qDate');if(q&&(!q.value||q.value===was))q.value=t;
+  if(calYM===was.slice(0,7))calYM=t.slice(0,7);refreshLog();try{build();}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)dayCheck();});setInterval(dayCheck,60000);
+document.addEventListener('click',e=>{const b=e.target.closest('.cd');if(!b)return;calSel=b.dataset.d;document.querySelectorAll('.cd.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');showDay(b.dataset.d);});
 function showDay(ds){const el=document.getElementById('dayList');if(!el)return;const E=live().filter(x=>x.d===ds);
   el.innerHTML=`<h4>${fmtD(ds)}</h4>`+(E.length?E.map(x=>`<div class="dl ${x.who}"><span>${ACT[x.t].i} <b>${WHO2[x.who]}</b> – ${ACT[x.t].n}${x.var?' ('+VARN[x.var]+')':''}${x.ex?' · '+Object.keys(x.ex).length+' cvikov':''}${x.pain&&x.pain[x.who]?painTxt(x.pain[x.who]):''}</span><button type="button" data-del="${x.id}">✕</button></div>`).join(''):'<p class="mute">Žiadny záznam.</p>')+
     `<div class="qadd">Pridať na tento deň: ${Object.entries(ACT).map(([k,a])=>`<button type="button" data-qa="${k}" data-d="${ds}">${a.i} ${a.n}</button>`).join('')}</div>`;}

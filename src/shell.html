@@ -128,7 +128,14 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
 .wktop{display:flex;align-items:center;gap:8px;padding:10px 12px 6px}.wktop button{font:inherit;font-size:1.2rem;border:1px solid var(--line);background:#fff;border-radius:99px;width:40px;height:40px;cursor:pointer}
 .wkh{flex:1;min-width:0}.wkh span{display:block;font-size:.78rem;color:var(--mute)}.wkh b{font-size:1.1rem}
 .wkbar{height:5px;background:#e6dfd3;margin:0 12px;border-radius:9px;overflow:hidden}.wkbar i{display:block;height:100%;background:#2f7a3a;width:0;transition:width .3s}
-.wkscroll{flex:1;overflow:auto;padding:10px 12px 90px}.wkcard{border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--line)}.wkcard .v3{aspect-ratio:16/10}
+.wkscroll{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:10px 12px 12px;overflow:hidden}
+#wkView{flex:1 1 auto;min-height:170px;display:flex}
+.wkcard{flex:1;display:flex;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--line)}.wkcard .v3{aspect-ratio:auto!important;height:100%;flex:1;min-height:0}
+#wkBody{flex:0 1 auto;max-height:60%;overflow:auto;-webkit-overflow-scrolling:touch}
+#wkBody .wkp:first-child{margin-top:0}
+@media (min-width:900px) and (min-aspect-ratio:1/1){.wkscroll{flex-direction:row;gap:14px;padding:12px 16px 16px}#wkBody{flex:none;width:min(480px,40%);max-height:none}}
+@media (max-width:620px){.wk .vtools{display:none}.wkp{padding:7px 10px;margin:7px 0}.wkset{font-size:1.02rem;margin:2px 0}.wkin label{font-size:0;gap:0}.wkin input{width:58px;padding:7px}.wkin .sd{padding:10px}.wkp .dots{margin-top:4px}.wkbtns{margin:6px 0}.wkp .prog:empty,.wkp .adj{font-size:.75rem}.wkh b{font-size:1rem}#wkBody{max-height:66%}#wkView{min-height:140px}}
+@media (min-width:900px){.wk{font-size:1.08rem}.wkin input{font-size:1.2rem;width:84px;padding:10px}.wkin .sd{padding:14px 16px;font-size:1.1rem}.wkbtns .big{padding:14px 16px;font-size:1.1rem}.wkset{font-size:1.3rem}}
 .wkdose{font-size:1.2rem;font-weight:800;margin:12px 0 4px}.wkhow{padding-left:20px;font-size:.95rem}
 .wkp{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:10px 0}.wkp.m{border-left:5px solid var(--mama)}.wkp.t{border-left:5px solid var(--tato)}.wkp.fin{opacity:.92}
 .wkph{display:flex;gap:8px;align-items:baseline}.wkph span{font-size:.8rem;color:var(--mute)}.wkset{font-size:1.15rem;margin:4px 0}
@@ -137,12 +144,12 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
 .dots{display:flex;gap:5px;margin:8px 0 2px}.dots i{width:12px;height:12px;border-radius:50%;background:#e2dbcf}.dots i.on{background:#2f7a3a}
 .rate{margin-top:8px;font-size:.88rem;display:flex;flex-wrap:wrap;gap:6px;align-items:center}.rate button{font:inherit;padding:7px 10px;border-radius:99px;border:1px solid var(--line);background:#fff;cursor:pointer}.rate button.on{background:var(--ink);color:#fff}
 .wkt{font-size:.85rem}.warn{background:#fff6e0;border-radius:10px;padding:8px 10px;font-size:.88rem}
-.wkbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.wkbtns .big{flex:1}
-.wkfoot{position:absolute;left:12px;bottom:12px}.wkfoot button{font:inherit;padding:9px 14px;border-radius:99px;border:1px solid var(--line);background:#fff}
-.wktimer{position:absolute;left:0;right:0;bottom:0;background:#1f2328;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:14px;z-index:5}
+.wkbtns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.wkbtns .big{flex:1}.wkbtns .bk{flex:0 0 auto;font:inherit;font-weight:700;padding:11px 16px;border-radius:12px;border:1px solid var(--line);background:#fff;cursor:pointer}.wkbtns .bk:disabled{opacity:.4}
+.wkfoot{display:none}.wkfoot button{font:inherit;padding:9px 14px;border-radius:99px;border:1px solid var(--line);background:#fff}
+.wktimer{position:relative;flex:none;background:#1f2328;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:14px;z-index:5}
 .wktimer b{font-size:2.4rem;font-variant-numeric:tabular-nums}.wktimer span{flex:1;font-size:1rem}.wktimer button{font:inherit;padding:9px 14px;border-radius:99px;border:0;background:#fff;color:#111}
 .pain{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:6px 0;font-size:.9rem}.pain span{width:100%;font-weight:700;font-size:.85rem}
-.wkcard.two{display:grid;grid-template-columns:1fr 1fr}
+.wkcard.two{display:grid;grid-template-columns:1fr 1fr}.wkcard.two .v3{height:auto}
 </style>
 </head>
 <body>

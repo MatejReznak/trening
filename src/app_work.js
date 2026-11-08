@@ -36,10 +36,9 @@ function wkStep(i){
   WK.cur={ex,per};
   if(st.part!=='main'){
     const secs=secsOf(ex.both||'');
-    document.getElementById('wkBody').innerHTML=`<p class="wkdose">${ex.both||''}</p><ol class="wkhow">${(ex.how||[]).map(h=>`<li>${h}</li>`).join('')}</ol>
-      <div class="wkbtns">${secs?`<button type="button" class="big" id="wkT" data-s="${secs}">⏱ Spustiť ${secs} s</button>`:''}<button type="button" class="big go" id="wkNext">Hotovo → ďalej</button></div>`;
+    document.getElementById('wkBody').innerHTML=`<p class="wkdose">${ex.both||''}</p>
+      <div class="wkbtns"><button type="button" class="bk" id="wkBack"${WK.i===0?' disabled':''}>← Späť</button>${secs?`<button type="button" class="big" id="wkT" data-s="${secs}">⏱ Spustiť ${secs} s</button>`:''}<button type="button" class="big go" id="wkNext">Hotovo → ďalej</button></div><ol class="wkhow">${(ex.how||[]).map(h=>`<li>${h}</li>`).join('')}</ol>`;
   }else wkRenderMain();
-  document.getElementById('wkBack').disabled=i===0;
 }
 function wkRenderMain(){const {ex,per}=WK.cur;
   document.getElementById('wkBody').innerHTML=per.map(p=>{const s=p.D.sets||1;const all=p.done>=s;
@@ -51,8 +50,8 @@ function wkRenderMain(){const {ex,per}=WK.cur;
      <div class="dots">${Array.from({length:s},(_,k)=>`<i class="${k<p.done?'on':''}"></i>`).join('')}</div>
      ${all?`<div class="rate" data-w="${p.w}">Ako to šlo? <button type="button" data-r="e">😌 Ľahké</button><button type="button" data-r="o">🙂 Akurát</button><button type="button" data-r="h">😮‍💨 Ťažké</button></div>`:''}
      <small class="prog">${progHint(p.w,ex)}</small></div>`;}).join('')+
-    `<p class="mute wkt">${(ex.how||[]).slice(0,3).map((h,k)=>(k+1)+'. '+h).join(' ')}</p>${ex.warn?`<p class="warn">${ex.warn}</p>`:''}
-    <div class="wkbtns"><button type="button" class="big go" id="wkNext">${per.every(p=>p.done>=(p.D.sets||1))?'Ďalší cvik →':'Preskočiť cvik →'}</button></div>`;
+    `<div class="wkbtns"><button type="button" class="bk" id="wkBack"${WK.i===0?' disabled':''}>← Späť</button><button type="button" class="big go" id="wkNext">${per.every(p=>p.done>=(p.D.sets||1))?'Ďalší cvik →':'Preskočiť cvik →'}</button></div>
+    <p class="mute wkt">${(ex.how||[]).slice(0,3).map((h,k)=>(k+1)+'. '+h).join(' ')}</p>${ex.warn?`<p class="warn">${ex.warn}</p>`:''}`;
   const lg=WK.log[ex.id]||{};per.forEach(p=>{if(lg[p.w]&&lg[p.w].r){const b=document.querySelector(`.rate[data-w="${p.w}"] [data-r="${lg[p.w].r}"]`);b&&b.classList.add('on');}});}
 function timerRun(secs,label,after){clearInterval(WK.tid);const end=Date.now()+secs*1000;const tb=document.getElementById('wkTimer');tb.hidden=false;let lastS=-1;tb.innerHTML=`<b></b><span>${label}</span><button type="button" id="wkSkip">Preskočiť</button>`;const tbB=tb.querySelector('b');
   say(label+' '+secs+' '+sk(secs));

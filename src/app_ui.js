@@ -32,7 +32,7 @@ function cardHTML(ex,i,kind){
   return `<div class="ex" id="ex-${ex.id}"><div class="fig"><span class="num">${i+1}</span>${vh}</div>
    <div class="body"><h3>${ex.n}</h3>${vrows}<ol>${ex.how.map(h=>`<li>${h}</li>`).join('')}</ol>
    ${notes?`<ul class="vnote">${notes}</ul>`:''}
-   <div class="warn"><b>Pozor:</b> ${ex.warn}</div><div class="dose">${dose}</div>
+   <div class="warn"><b>Pozor:</b> ${ex.warn}</div>${BRT[ex.id]?`<div class="brt">🫁 <b>Dýchanie:</b> ${BRT[ex.id]}</div>`:''}<div class="dose">${dose}</div>
    ${vidHTML(ex,im,it)}</div></div>`;
 }
 /* ---------- views ---------- */
@@ -47,7 +47,7 @@ function registerViews(card,ex,i){
   });
 }
 function unregisterViews(card){for(let i=VIEWS.length-1;i>=0;i--){if(card.contains(VIEWS[i].el)){if(io)io.unobserve(VIEWS[i].el);disposeView(VIEWS[i]);VIEWS.splice(i,1);}}}
-function disposeView(v){if(!v.scene)return;v.scene.traverse(o=>{if(o.geometry&&!o.isSkinnedMesh)o.geometry.dispose();});v.scene=null;}
+function disposeView(v){[v.scene,v.sceneB].forEach(sc=>{if(sc)sc.traverse(o=>{if(o.geometry&&!o.isSkinnedMesh)o.geometry.dispose();});});v.scene=null;v.sceneB=null;}
 function setActive(v,on){VIEWS.forEach(o=>{if(o!==v&&o.active){o.active=false;o.el.classList.remove('active');}});v.active=on;v.el.classList.toggle('active',on);}
 function bindRotate(v){
   const el=v.el;let down=null,moved=0;
@@ -59,7 +59,7 @@ function bindRotate(v){
 }
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('.v3'))VIEWS.forEach(v=>{if(v.active)setActive(v,false);});});
 function buildView(v){
-  const A=AV[v.who];const variant=v.ex.v[v.vi];let an;if(v.bad&&BAD[v.ex.id]){const raw=variant.anim(A.L);raw._L=A.L;badMod(BAD[v.ex.id][0])(raw);an=normalizeAnim(raw,A.L);}else an=animFor(variant.anim,A.L);v.an=an;
+  const A=AV[v.who];const variant=v.ex.v[v.vi];const an=animFor(variant.anim,A.L);v.an=an;
   const sc=makeScene();const env=GYM.includes(v.ex)?'gym':FIT.includes(v.ex)?'fit':HOME.includes(v.ex)?'home':VAR;const bb=buildProps(sc,an.props,{env});const inst=makeAvatarInstance(v.who,sc);const D=buildDyn(sc,inst,an.dyn,an.props);
   v.opt={hand:an.hand,curl:an.curl,side:an.side,ground:an.ground,footFloor:an.footFloor,footRelax:an.footRelax,footN:an.footN,footOff:an.footOff};
   const box=bb.clone();
@@ -67,6 +67,9 @@ function buildView(v){
   box.max.y+=0.14;box.min.y=Math.min(box.min.y,0);
   v.box=box;v.scene=sc;v.inst=inst;v.dyn=D;v.cam=new THREE.PerspectiveCamera(28,1.5,.05,40);
   v.yaw0=an.yaw!=null?an.yaw:0.45;if(v.yaw==null)v.yaw=v.yaw0;
+  if(v.bad&&BAD[v.ex.id]){const raw=variant.anim(A.L);raw._L=A.L;badMod(BAD[v.ex.id][0])(raw);v.anB=normalizeAnim(raw,A.L);
+    v.sceneB=makeScene();buildProps(v.sceneB,v.anB.props,{env});v.instB=makeAvatarInstance(v.who,v.sceneB);v.dynB=buildDyn(v.sceneB,v.instB,v.anB.dyn,v.anB.props);
+    v.redB=addOverlay(v.instB,BADZ[BAD[v.ex.id][0]]||['back'],[1,0.05,0.03]);}else{v.anB=null;v.sceneB=null;}
   v.el.classList.add('ready');if(v.mus)setMuscles(v,true);
 }
 function camFor(v,aspect){
@@ -87,9 +90,19 @@ function renderViews(now){
   for(const v of order){
     if(!v.scene){if(built)continue;buildView(v);built=true;}
     if(n++>=budget)break;
-    const p=poseAtTime(v.an,now+v.phase);poseInstance(v.inst,p,v.opt);updateDyn(v.dyn,v.inst);
+    const dt=v.lastNow?Math.min(250,now-v.lastNow):0;v.lastNow=now;v.clk=(v.clk||0)+dt*(v.slow?0.45:1);const tt=v.clk+v.phase;
+    const p=poseAtTime(v.an,tt);poseInstance(v.inst,p,v.opt);updateDyn(v.dyn,v.inst);
+    {const br=breathOf(v.ex,v.an,tt);if(!v.brEl)v.brEl=v.el.querySelector('.vbr');if(v.brEl){let k=br?(br.k==='pause'?v.brK:br.k):'';if(br&&br.k!=='pause')v.brK=br.k;k=k||'';if(v.brEl.dataset.k!==k){v.brEl.dataset.k=k;v.brEl.className='vbr '+k;v.brEl.textContent=k?BRL[k]:'';}}}
+    {const br=breathOf(v.ex,v.an,tt);const k=br?(br.k==='pause'?(v.brK||''):br.k):'';const tg={exhale:k==='out'?0.85:k==='calm'?0.1+0.1*Math.sin(tt/900):0,effort:k==='out'?0.55:k==='pause'&&v.brK==='out'?0.25:0};
+      v.face=v.face||{exhale:0,effort:0,blink:0};const a=Math.min(1,dt/180);v.face.exhale+=(tg.exhale-v.face.exhale)*a;v.face.effort+=(tg.effort-v.face.effort)*a;
+      if(!v.nb)v.nb=now+1500+Math.random()*3000;if(now>v.nb+160)v.nb=now+2500+Math.random()*3500;v.face.blink=(now>=v.nb&&now<v.nb+160)?Math.sin(Math.PI*(now-v.nb)/160):0;
+      setFace(v.inst,v.face);if(v.instB)setFace(v.instB,v.face);}
+    if(v.anB){const pb=poseAtTime(v.anB,tt);poseInstance(v.instB,pb,v.opt);updateDyn(v.dynB,v.instB);const pu=0.55+0.45*Math.sin(now/260);(v.redB||[]).forEach(o=>o.material.color.setScalar(pu));}
     const w=v.canvas.width,h=v.canvas.height;
-    if(v.dual){const y0=v.yaw,p0=v.pitch;GLR.setScissorTest(true);GLR.setViewport(0,0,w,h);GLR.setScissor(0,0,w,h);GLR.clear();
+    if(v.anB){GLR.setScissorTest(true);GLR.setViewport(0,0,w,h);GLR.setScissor(0,0,w,h);GLR.clear();const vert=h>w*0.9;const sp=vert?'v':'h';if(v.el.dataset.split!==sp)v.el.dataset.split=sp;
+      const R=vert?[[0,h-Math.floor(h/2),w,Math.floor(h/2)],[0,0,w,h-Math.floor(h/2)]]:[[0,0,Math.floor(w/2),h],[Math.floor(w/2),0,w-Math.floor(w/2),h]];
+      [[v.scene],[v.sceneB]].forEach(([sc],k)=>{const r=R[k];camFor(v,r[2]/r[3]);GLR.setViewport(r[0],r[1],r[2],r[3]);GLR.setScissor(r[0],r[1],r[2],r[3]);GLR.render(sc,v.cam);});}
+    else if(v.dual){const y0=v.yaw,p0=v.pitch;GLR.setScissorTest(true);GLR.setViewport(0,0,w,h);GLR.setScissor(0,0,w,h);GLR.clear();
       const R=[];if(h>w*0.9){const hh=Math.floor(h/2);R.push([0,h-hh,w,hh],[0,0,w,h-hh]);}else{const hw=Math.floor(w/2);R.push([0,0,hw,h],[hw,0,w-hw,h]);}
       [[0.08,0.12],[Math.PI/2-0.12,0.12]].forEach(([yw,pt],k)=>{const r=R[k];v.yaw=yw;v.pitch=pt;camFor(v,r[2]/r[3]);GLR.setViewport(r[0],r[1],r[2],r[3]);GLR.setScissor(r[0],r[1],r[2],r[3]);GLR.render(v.scene,v.cam);});
       v.yaw=y0;v.pitch=p0;}

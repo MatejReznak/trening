@@ -20,10 +20,10 @@ function wkStart(short){audioInit();const who=['m','t'].filter(w=>document.getEl
   document.body.classList.add('wkon');document.getElementById('wk').hidden=false;wkStep(0);
   try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(l=>WK.lock=l).catch(()=>{});}catch(e){}
   say((short?'Krátky tréning. ':'')+'Začíname. '+(WK.steps[0].ex.n));}
-function wkClose(ask){if(ask&&!confirm('Ukončiť tréning bez uloženia?'))return;WK.on=false;clearInterval(WK.tid);document.body.classList.remove('wkon');document.getElementById('wk').hidden=true;
+function wkClose(ask){if(ask&&!confirm('Ukončiť tréning bez uloženia?'))return;paceStop(true);WK.on=false;document.body.classList.remove('tvmode');clearInterval(WK.tid);document.body.classList.remove('wkon');document.getElementById('wk').hidden=true;
   const sv=document.getElementById('wkView');unregisterViews(sv);sv.innerHTML='';try{WK.lock&&WK.lock.release();}catch(e){}}
 function wkStep(i,keep){
-  if(!keep)clearInterval(WK.tid);WK.i=i;const st=WK.steps[i];const ex=st.ex;const box=document.getElementById('wk');
+  if(!keep)clearInterval(WK.tid);paceStop(true);WK.i=i;const st=WK.steps[i];const ex=st.ex;const box=document.getElementById('wk');
   const sv=document.getElementById('wkView');unregisterViews(sv);
   const vi=vIdx(ex,WK.who[0]);const who0=WK.who[0];
   const vs=[[who0,vi]];WK.who.slice(1).forEach(w=>{const x=vIdx(ex,w);if(x!==vi)vs.push([w,x]);});
@@ -57,7 +57,7 @@ function wkRenderMain(){const {ex,per}=WK.cur;
      <div class="dots">${Array.from({length:s},(_,k)=>`<i class="${k<p.done?'on':''}"></i>`).join('')}</div>
      ${all?`<div class="rate" data-w="${p.w}">Ako to šlo? <button type="button" data-r="e">😌 Ľahké</button><button type="button" data-r="o">🙂 Akurát</button><button type="button" data-r="h">😮‍💨 Ťažké</button></div>`:''}
      <small class="prog">${progHint(p.w,ex)}</small></div>`;}).join('')+
-    `<div class="wkbtns"><button type="button" class="bk" id="wkBack"${WK.i===0?' disabled':''}>← Späť</button><button type="button" class="big go" id="wkNext">${per.every(p=>p.done>=(p.D.sets||1))?'Ďalší cvik →':'Preskočiť cvik →'}</button></div>
+    `${BR[ex.id]===0||BR[ex.id]===1?`<div class="wkbtns"><button type="button" class="big pace" id="wkPace">🗣 Počítaj so mnou</button></div>`:''}<div class="wkbtns"><button type="button" class="bk" id="wkBack"${WK.i===0?' disabled':''}>← Späť</button><button type="button" class="big go" id="wkNext">${per.every(p=>p.done>=(p.D.sets||1))?'Ďalší cvik →':'Preskočiť cvik →'}</button></div>
     <p class="mute wkt">${(ex.how||[]).slice(0,3).map((h,k)=>(k+1)+'. '+h).join(' ')}</p>${ex.warn?`<p class="warn">${ex.warn}</p>`:''}`;
   const lg=WK.log[ex.id]||{};per.forEach(p=>{if(lg[p.w]&&lg[p.w].r){const b=document.querySelector(`.rate[data-w="${p.w}"] [data-r="${lg[p.w].r}"]`);b&&b.classList.add('on');}});}
 function timerRun(secs,label,after){clearInterval(WK.tid);const end=Date.now()+secs*1000;const tb=document.getElementById('wkTimer');tb.hidden=false;let lastS=-1;tb.innerHTML=`<b></b><span>${label}</span><button type="button" id="wkSkip">Preskočiť</button>`;const tbB=tb.querySelector('b');
@@ -70,6 +70,8 @@ document.addEventListener('click',e=>{if(!WK.on){if(e.target.closest('#wkGo'))wk
   const t=e.target;
   if(t.closest('#wkX'))return wkClose(true);
   if(t.closest('#wkBack'))return wkStep(Math.max(0,WK.i-1));
+  if(t.closest('#wkPace')){PACE?paceStop():paceStart();return;}
+  if(t.closest('#wkTv')){document.body.classList.toggle('tvmode');t.closest('#wkTv').classList.toggle('on');return;}
   if(t.closest('#wkLv')){const b=document.getElementById('wkLvBox');b.hidden=!b.hidden;if(!b.hidden)b.innerHTML=wkLvHTML();return;}
   const wl=t.closest('[data-wl]');if(wl){const w=wl.dataset.w;LV[w]=+wl.dataset.wl;for(const k in OV){if(OV[k])delete OV[k][w];}save();try{build();refreshLog();}catch(_){}
     document.getElementById('wkLvBox').innerHTML=wkLvHTML();wkStep(WK.i,wkKeep());toast(WHO2[w]+': úroveň '+LV[w]);return;}
@@ -125,3 +127,14 @@ function confetti(cv){const c=cv.getContext('2d');const W=cv.width=innerWidth*de
   const P=Array.from({length:160},()=>({x:Math.random()*W,y:-Math.random()*H*0.6,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,r:4+Math.random()*6,a:Math.random()*6,va:(Math.random()-.5)*.3,c:cols[Math.floor(Math.random()*cols.length)]}));
   const t0=performance.now();(function f(t){c.clearRect(0,0,W,H);const k=devicePixelRatio;P.forEach(p=>{p.x+=p.vx*k;p.y+=p.vy*k;p.a+=p.va;c.save();c.translate(p.x,p.y);c.rotate(p.a);c.fillStyle=p.c;c.fillRect(-p.r*k/2,-p.r*k/4,p.r*k,p.r*k/2);c.restore();});
     if(t-t0<4000&&cv.isConnected)requestAnimationFrame(f);else c.clearRect(0,0,W,H);})(t0);}
+
+/* ---------- hlasový tréner: počíta opakovania v tempe ukážky ---------- */
+let PACE=null;
+function paceStop(silent){if(!PACE)return;clearInterval(PACE.tid);PACE=null;const b=document.getElementById('wkPace');if(b){b.textContent='🗣 Počítaj so mnou';b.classList.remove('on');}if(!silent)say('Stop');}
+function paceStart(){const ex=WK.cur.ex;const V=VIEWS.filter(v=>document.getElementById('wkView').contains(v.el)&&v.an);if(!V.length){toast('Počkaj, kým sa načíta ukážka');return;}
+  const target=Math.max(...WK.cur.per.map(p=>parseInt(p.D.reps)||10));V.forEach(v=>{v.clk=-v.phase-1500;});
+  const v=V[0];let last='',n=0,done=false;const b=document.getElementById('wkPace');b.classList.add('on');
+  const tip=(ex.warn||'').split(/[.–]/)[0].trim();say((tip?tip+'. ':'')+'Pripravte sa.');
+  PACE={tid:setInterval(()=>{const t=v.clk+v.phase;if(t<0)return;const br=breathOf(ex,v.an,t);if(!br||!br.move)return;const key=br.i+':'+Math.floor(t/phaseAt(v.an,t).tot);if(key===last)return;last=key;
+    if(br.eff){if(done)return;n++;b.textContent=`⏹ ${n} / ${target}`;say(n>=target?n+'. Posledné – výdych':n+'. výdych');if(n>=target){done=true;setTimeout(()=>{if(PACE){say('Výborne, séria hotová. Ťuknite na Séria hotová.');paceStop(true);}},2600);}}
+    else if(!done)say('nádych');},90)};}

@@ -215,6 +215,20 @@ h2{letter-spacing:-.01em}
 .charts{display:grid;gap:12px}@media(min-width:900px){.charts{grid-template-columns:1fr 1fr}}
 .chart{border-radius:16px;padding:10px 14px}.chart svg{width:100%;height:auto!important;display:block}.chh{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.chh small{color:var(--mute)}.axt{font:600 10px Nunito,system-ui,sans-serif;fill:#8a919c}.chd{display:flex;gap:12px;font-size:.85rem}
 .stats{display:grid;gap:12px;margin-bottom:12px}@media(min-width:900px){.stats{grid-template-columns:1fr 1fr}}.stat{border-radius:16px;padding:10px 12px}.stat.m{background:var(--mama-bg)}.stat.t{background:var(--tato-bg)}
+.vbr{position:absolute;left:10px;bottom:10px;z-index:3;padding:6px 14px;border-radius:99px;font-weight:800;font-size:.9rem;background:rgba(255,255,255,.92);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.12);transition:background .25s,color .25s}
+.vbr:empty{display:none}.vbr.out{background:#2f7a3a;color:#fff}.vbr.in{background:#e5f1f8;color:#1f6f9f}.vbr.calm{background:#f3efe7;color:var(--mute)}
+.lbl-ok,.lbl-bad{display:none;position:absolute;z-index:3;font-weight:800;font-size:.85rem;padding:4px 10px;border-radius:99px}
+.v3.isbad .lbl-ok,.v3.isbad .lbl-bad{display:block}.lbl-ok{background:#e3f1e3;color:#2f7a3a}.lbl-bad{background:#fde3e0;color:#b3261e}
+.v3.isbad .lbl-ok{left:calc(25% - 46px);top:80px}.v3.isbad .lbl-bad{left:calc(75% - 46px);top:80px}.v3.isbad .vtools button:not([data-t=bad]){display:none}.v3.isbad .vbr{display:none}
+.v3.isbad .vinfo{bottom:8px;background:rgba(255,255,255,.93);border-radius:10px;padding:5px 9px;text-shadow:none;font-size:.82rem}.v3.isbad .vinfo .mute{display:none}
+.v3.isbad[data-split=v] .lbl-ok{left:auto;right:10px;top:44px}.v3.isbad[data-split=v] .lbl-bad{left:auto;right:10px;top:calc(50% + 6px)}
+.brt{background:#eef6f0;border-radius:10px;padding:8px 10px;font-size:.9rem;margin-top:8px}
+.vtools button.on{background:var(--ink);color:#fff}
+.big.pace{background:#fff;color:var(--ink);border:2px solid #2f7a3a}.big.pace.on{background:#2f7a3a;color:#fff}
+body.tvmode .wk{font-size:1.25rem}body.tvmode .wkscroll{flex-direction:row}body.tvmode #wkBody{width:min(420px,30%)!important;flex:none;max-height:none}
+body.tvmode .wkt,body.tvmode .warn,body.tvmode .prog,body.tvmode .vtools,body.tvmode .vinfo,body.tvmode .wkin label{display:none}
+body.tvmode .wkset{font-size:1.6rem}body.tvmode .vbr{font-size:1.5rem;padding:10px 22px;left:50%;transform:translateX(-50%);bottom:18px}body.tvmode .wkh b{font-size:1.6rem}
+body.tvmode .wktimer b{font-size:4rem}body.tvmode .wktimer{padding:20px 28px}#wkTv.on{background:var(--ink);color:#fff}
 </style>
 </head>
 <body>
@@ -314,7 +328,7 @@ h2{letter-spacing:-.01em}
 </div>
 <nav class="tabs" id="tabs"><button type="button" data-tab="cal" class="on"><i>📅</i>Kalendár</button><button type="button" data-tab="ex"><i>🏋️</i>Cviky</button><button type="button" data-tab="prog"><i>📈</i>Pokrok</button><button type="button" data-tab="info"><i>ℹ️</i>Info</button></nav>
 <div class="wk" id="wk" hidden>
-  <div class="wktop"><button type="button" id="wkX" aria-label="Zavrieť">✕</button><div class="wkh" id="wkHead"></div><button type="button" id="wkLv" class="wklvb">Úroveň</button><button type="button" id="wkVoice">🔊</button></div>
+  <div class="wktop"><button type="button" id="wkX" aria-label="Zavrieť">✕</button><div class="wkh" id="wkHead"></div><button type="button" id="wkTv" class="wklvb" title="Veľký režim na televízor (AirPlay)">📺 TV</button><button type="button" id="wkLv" class="wklvb">Úroveň</button><button type="button" id="wkVoice">🔊</button></div>
   <div class="wklvbox" id="wkLvBox" hidden></div>
   <div class="wkbar"><i id="wkProg"></i></div>
   <div class="wkscroll"><div id="wkView"></div><div id="wkBody"></div></div>

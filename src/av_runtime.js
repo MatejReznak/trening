@@ -24,6 +24,7 @@ async function loadAvatars(){
       g.setAttribute('skinWeight',new THREE.BufferAttribute(arr(m.sw),4,true));
       if(m.col) g.setAttribute('color',new THREE.BufferAttribute(arr(m.col),3,true));
       g.setIndex(new THREE.BufferAttribute(arr(m.idx),1));
+      const mk=Object.keys(m).filter(k=>k.startsWith('mt_'));if(mk.length){g.morphAttributes.position=mk.map(k=>new THREE.BufferAttribute(arr(m[k]),3));g.morphTargetsRelative=true;g.userData.morphs=mk.map(k=>k.slice(3));}
       g.computeBoundingSphere();
       return {name:m.name,mat:m.mat,geo:g,pos:arr(m.pos),si:arr(m.si),sw:arr(m.sw)};
     });
@@ -134,14 +135,29 @@ function avMats(){
   return AVMAT;
 }
 
+/* ---------- skin & hair detail (normal map sampled at its own scale + soft subsurface glow) ---------- */
+let _microN=null,_strandN=null;
+function nrmFromHeight(S0,draw){const c=document.createElement('canvas');c.width=c.height=S0;const g=c.getContext('2d');draw(g,S0);
+  const d=g.getImageData(0,0,S0,S0).data,o=g.createImageData(S0,S0),q=o.data;const H=(x,y)=>d[4*(((y+S0)%S0)*S0+((x+S0)%S0))]/255;
+  for(let y=0;y<S0;y++)for(let x=0;x<S0;x++){const dx=(H(x+1,y)-H(x-1,y))*2,dy=(H(x,y+1)-H(x,y-1))*2,l=Math.hypot(dx,dy,1),i=4*(y*S0+x);q[i]=(-dx/l*.5+.5)*255;q[i+1]=(dy/l*.5+.5)*255;q[i+2]=(1/l*.5+.5)*255;q[i+3]=255;}
+  g.putImageData(o,0,0);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t;}
+function microN(){if(_microN)return _microN;_microN=nrmFromHeight(512,(g,S)=>{g.fillStyle='#888';g.fillRect(0,0,S,S);
+  for(let i=0;i<9000;i++){const x=Math.random()*S,y=Math.random()*S,r=0.6+Math.random()*1.3;g.fillStyle=`rgba(40,40,40,${0.25+Math.random()*0.3})`;g.beginPath();g.arc(x,y,r,0,7);g.fill();}
+  for(let i=0;i<260;i++){const x=Math.random()*S,y=Math.random()*S,a=Math.random()*Math.PI,L=8+Math.random()*30;g.strokeStyle='rgba(70,70,70,0.25)';g.lineWidth=0.8;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*L,y+Math.sin(a)*L);g.stroke();}});return _microN;}
+function strandN(){if(_strandN)return _strandN;_strandN=nrmFromHeight(512,(g,S)=>{for(let x=0;x<S;x++){const v=128+Math.sin(x*0.9)*30+Math.sin(x*0.23+1)*35+(Math.random()-0.5)*60;g.fillStyle=`rgb(${v|0},${v|0},${v|0})`;g.fillRect(x,0,1,S);}});return _strandN;}
+function skinUp(m){m.onBeforeCompile=sh=>{
+    sh.fragmentShader=sh.fragmentShader.replace('texture2D( normalMap, vUv )','texture2D( normalMap, vUv*230.0 )')
+      .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{vec3 vd=normalize(vViewPosition);float fr=pow(1.0-clamp(dot(normal,vd),0.0,1.0),2.2);totalEmissiveRadiance+=vec3(0.30,0.075,0.05)*fr*0.22*diffuseColor.rgb;}');};
+  m.customProgramCacheKey=()=>'skinUp';return m;}
+function hairUp(m){m.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('texture2D( normalMap, vUv )','texture2D( normalMap, vUv.yx*vec2(60.0,5.0) )');};m.customProgramCacheKey=()=>'hairUp';return m;}
 /* ---------- instance ---------- */
 function avatarMats(A){
   if(A.mats) return A.mats;
   const M=avMats(),T=A.tex;
   const cl=(m,o)=>{const n=m.clone();Object.assign(n,o);n.needsUpdate=true;return n;};
   A.mats={
-    skin:cl(M.skin,{map:T.detail,vertexColors:false}),
-    hairM:cl(M.hairM,{map:T.detail,vertexColors:false,alphaMap:T.hair,alphaTest:.5,alphaToCoverage:true}),
+    skin:skinUp(cl(M.skin,{map:T.detail,vertexColors:false,normalMap:microN(),normalScale:new THREE.Vector2(.18,.18)})),
+    hairM:hairUp(cl(M.hairM,{map:T.detail,vertexColors:false,alphaMap:T.hair,alphaTest:.5,alphaToCoverage:true,normalMap:strandN(),normalScale:new THREE.Vector2(.55,.55)})),
     hairT:cl(M.hairT,{map:T.detail,vertexColors:false,alphaMap:T.hair,alphaTest:.5,alphaToCoverage:true}),
     tank:cl(M.tank,{alphaMap:T.top,alphaTest:.5,alphaToCoverage:true,side:THREE.DoubleSide}),
     tee:cl(M.tee,{alphaMap:T.top,alphaTest:.5,alphaToCoverage:true,side:THREE.DoubleSide}),
@@ -181,7 +197,7 @@ function buildAccessories(inst){
     amesh(sph,M.pupil,hf,c.clone().add(v3(.0119,0,0)),v3(.0012,.0026,.0026));
   });
   if(inst.who==='m'){
-    // bun (hair tied back) + hair tie + sunglasses on head
+    // bun (hair tied back) + hair tie
     const top=lm.headTop,back=lm.headBack;
     const bunC=v3(back.x-0.012,(back.y+top.y)/2+0.012,0);
     amesh(sph,M.hairM,hf,bunC,v3(.042,.036,.04)).geometry=sph;
@@ -189,9 +205,6 @@ function buildAccessories(inst){
     hf.children[hf.children.length-1].material=bunMat;
     amesh(sph,bunMat,hf,bunC.clone().add(v3(-0.03,-0.03,0)),v3(.03,.04,.028));
     amesh(new THREE.TorusGeometry(.03,.006,8,20),M.hairtie,hf,bunC.clone().add(v3(.012,-.006,0)),null,new THREE.Quaternion().setFromAxisAngle(v3(0,0,1),Math.PI/2.6));
-    const gl=new THREE.Group();gl.position.set(top.x+0.042,top.y+0.006,0);gl.rotation.z=0.72;hf.add(gl);
-    [-1,1].forEach(sg=>{amesh(sph,M.glass,gl,v3(0,0,sg*0.029),v3(.0035,.018,.022));amesh(new THREE.TorusGeometry(1,.12,6,24),M.frame,gl,v3(0,0,sg*0.029),v3(.018,.021,.018),new THREE.Quaternion().setFromAxisAngle(v3(0,1,0),Math.PI/2));});
-    amesh(new THREE.BoxGeometry(.004,.004,.022),M.frame,gl,v3(0,.012,0));
   }
   // watch on left wrist
   const fl=follower(inst,'forearm2.L');
@@ -596,3 +609,7 @@ function smoothChest(meshes,shC){
     for(let i=0;i<n;i++){const v=id[i];if(w[v]<=0)continue;a.fromArray(fn,3*v).normalize();const o=new THREE.Vector3(N.getX(i),N.getY(i),N.getZ(i));const t=Math.min(1,w[v]*1.5);o.lerp(a,t).normalize();N.setXYZ(i,o.x,o.y,o.z);}
     N.needsUpdate=true;}
 }
+
+/* face expression: f = {exhale, effort, blink} 0..1 */
+function setFace(inst,f){if(!inst||!inst.meshes)return;for(const sm of inst.meshes){const names=sm.geometry.userData.morphs;if(!names||!sm.morphTargetInfluences)continue;
+  names.forEach((n,i)=>{sm.morphTargetInfluences[i]=f[n]||0;});}}

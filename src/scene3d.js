@@ -191,6 +191,10 @@ function rawPoseAt(an,now){
   for(;i<n;i++){const h=hold(i),d=dur(i);if(T<h) return k[i];T-=h;if(T<d){const kk=an.wrap?T/d:easeIO(T/d);return lerpPose(k[i],k[(i+1)%k.length],kk);}T-=d;}
   return k[0];
 }
+function phaseAt(an,now){const k=an.k,n=an.wrap?k.length-1:k.length;
+  const dur=i=>an.durs?an.durs[i%an.durs.length]:(an.dur||1200);const hold=i=>an.holds?an.holds[i%an.holds.length]:(an.wrap?0:(an.hold!=null?an.hold:450));
+  let tot=0;for(let i=0;i<n;i++)tot+=hold(i)+dur(i);let T=((now%tot)+tot)%tot;
+  for(let i=0;i<n;i++){const h=hold(i),d=dur(i);if(T<h)return {i,move:false,f:h?T/h:0,n,tot};T-=h;if(T<d)return {i,move:true,f:T/d,n,tot};T-=d;}return {i:0,move:false,f:0,n,tot};}
 function poseAtTime(an,now){
   const p=rawPoseAt(an,now);if(an.wrap||an.natural===false)return p;
   const o=Object.assign({},p);

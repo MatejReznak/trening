@@ -126,6 +126,8 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
 [hidden]{display:none!important}.no3dmsg{background:#fff3cd;color:#6b4e00;padding:10px 14px;font-size:.9rem;text-align:center}
 .wk{position:fixed;inset:0;z-index:50;background:var(--bg,#f5f1ea);display:flex;flex-direction:column}
 .wktop{display:flex;align-items:center;gap:8px;padding:10px 12px 6px}.wktop button{font:inherit;font-size:1.2rem;border:1px solid var(--line);background:#fff;border-radius:99px;width:40px;height:40px;cursor:pointer}
+.wktop .wklvb{width:auto;padding:0 14px;font-size:.95rem;font-weight:700}.wklvbox{margin:4px 12px 6px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}.wklvbox small{flex-basis:100%;color:var(--mute);font-size:.75rem}.wklvr{display:flex;gap:6px;align-items:center}.wklvr b.m{color:var(--mama)}.wklvr b.t{color:var(--tato)}.wklvr button{font:inherit;font-weight:800;width:42px;height:40px;border-radius:10px;border:1px solid var(--line);background:#f2ede4;cursor:pointer}.wklvr b.m~button.on{background:var(--mama);color:#fff}.wklvr b.t~button.on{background:var(--tato);color:#fff}
+.wkvar{display:inline-flex;align-items:center;gap:4px;margin-left:auto}.wkvar em{font-style:normal;font-size:.85rem;color:var(--mute);min-width:0;text-align:center}.wkvar button{font:inherit;font-size:1.3rem;line-height:1;width:40px;height:36px;border-radius:10px;border:1px solid var(--line);background:#f7f3ec;cursor:pointer}.wkvar button:disabled{opacity:.35}.wkph{align-items:center}
 .wkh{flex:1;min-width:0}.wkh span{display:block;font-size:.78rem;color:var(--mute)}.wkh b{font-size:1.1rem}
 .wkbar{height:5px;background:#e6dfd3;margin:0 12px;border-radius:9px;overflow:hidden}.wkbar i{display:block;height:100%;background:#2f7a3a;width:0;transition:width .3s}
 .wkscroll{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:10px 12px 12px;overflow:hidden}
@@ -248,7 +250,8 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
 <p class="foot">3D postavy sú vytvorené z voľne použiteľných (CC0) modelov MakeHuman, upravené podľa fotiek. Odkazy na videá sú navyše (v angličtine). Plán je všeobecný a nenahrádza radu lekára ani fyzioterapeuta.</p>
 </div>
 <div class="wk" id="wk" hidden>
-  <div class="wktop"><button type="button" id="wkX" aria-label="Zavrieť">✕</button><div class="wkh" id="wkHead"></div><button type="button" id="wkVoice">🔊</button></div>
+  <div class="wktop"><button type="button" id="wkX" aria-label="Zavrieť">✕</button><div class="wkh" id="wkHead"></div><button type="button" id="wkLv" class="wklvb">Úroveň</button><button type="button" id="wkVoice">🔊</button></div>
+  <div class="wklvbox" id="wkLvBox" hidden></div>
   <div class="wkbar"><i id="wkProg"></i></div>
   <div class="wkscroll"><div id="wkView"></div><div id="wkBody"></div></div>
   <div class="wkfoot"><button type="button" id="wkBack">← Späť</button></div>

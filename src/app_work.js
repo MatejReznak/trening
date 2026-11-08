@@ -19,8 +19,8 @@ function wkStart(){audioInit();const who=['m','t'].filter(w=>document.getElement
   say('Začíname. '+(WK.steps[0].ex.n));}
 function wkClose(ask){if(ask&&!confirm('Ukončiť tréning bez uloženia?'))return;WK.on=false;clearInterval(WK.tid);document.body.classList.remove('wkon');document.getElementById('wk').hidden=true;
   const sv=document.getElementById('wkView');unregisterViews(sv);sv.innerHTML='';try{WK.lock&&WK.lock.release();}catch(e){}}
-function wkStep(i){
-  clearInterval(WK.tid);WK.i=i;const st=WK.steps[i];const ex=st.ex;const box=document.getElementById('wk');
+function wkStep(i,keep){
+  if(!keep)clearInterval(WK.tid);WK.i=i;const st=WK.steps[i];const ex=st.ex;const box=document.getElementById('wk');
   const sv=document.getElementById('wkView');unregisterViews(sv);
   const vi=vIdx(ex,WK.who[0]);const who0=WK.who[0];
   const vs=[[who0,vi]];WK.who.slice(1).forEach(w=>{const x=vIdx(ex,w);if(x!==vi)vs.push([w,x]);});
@@ -32,7 +32,7 @@ function wkStep(i){
   const per=WK.who.map(w=>{const D=doseOf(ex,w);const v=ex.v[vIdx(ex,w)];const L=lastLog(w,ex.id)[0];
     const lastKg=L&&L.s&&L.s.length?L.s[L.s.length-1][1]:'';const mk=String(D.w||'').match(/(\d+(?:[.,]\d+)?)\s*(?:[–-]\s*\d+(?:[.,]\d+)?)?\s*kg/);const defKg=lastKg||(mk?mk[1]:'');
     const repsN=parseInt(D.reps)||'';
-    return {w,D,v,defKg:(v.weighted===false||ex.both)?'':defKg,repsN,done:0};});
+    return {w,D,v,defKg:(v.weighted===false||ex.both)?'':defKg,repsN,done:keep&&keep[w]||0};});
   WK.cur={ex,per};
   if(st.part!=='main'){
     const secs=secsOf(ex.both||'');
@@ -40,9 +40,13 @@ function wkStep(i){
       <div class="wkbtns"><button type="button" class="bk" id="wkBack"${WK.i===0?' disabled':''}>← Späť</button>${secs?`<button type="button" class="big" id="wkT" data-s="${secs}">⏱ Spustiť ${secs} s</button>`:''}<button type="button" class="big go" id="wkNext">Hotovo → ďalej</button></div><ol class="wkhow">${(ex.how||[]).map(h=>`<li>${h}</li>`).join('')}</ol>`;
   }else wkRenderMain();
 }
+function autoIdx(ex,w){const o=OV[ex.id]&&OV[ex.id][w];if(o==null)return vIdx(ex,w);delete OV[ex.id][w];const a=vIdx(ex,w);OV[ex.id][w]=o;return a;}
+function wkKeep(){const k={};(WK.cur&&WK.cur.per||[]).forEach(p=>k[p.w]=p.done);return k;}
+function wkLvHTML(){return WK.who.map(w=>`<div class="wklvr"><b class="${w}">${WHO2[w]}</b>${[1,2,3,4].map(l=>`<button type="button" data-wl="${l}" data-w="${w}" class="${LV[w]===l?'on':''}">${l}</button>`).join('')}</div>`).join('')+'<small>Zmena úrovne zruší ručné úpravy cvikov danej osoby.</small>';}
 function wkRenderMain(){const {ex,per}=WK.cur;
   document.getElementById('wkBody').innerHTML=per.map(p=>{const s=p.D.sets||1;const all=p.done>=s;
-    return `<div class="wkp ${p.w}${all?' fin':''}"><div class="wkph"><b>${WHO2[p.w]}</b> <span>${p.v.lab}</span></div>
+    return `<div class="wkp ${p.w}${all?' fin':''}"><div class="wkph"><b>${WHO2[p.w]}</b> ${ex.v.length>1?`<span class="wkvar"><button type="button" data-wv="-1" data-w="${p.w}" ${vIdx(ex,p.w)<=0?'disabled':''} aria-label="Ľahšie">‹</button><em>${p.v.lab}</em><button type="button" data-wv="1" data-w="${p.w}" ${vIdx(ex,p.w)>=ex.v.length-1?'disabled':''} aria-label="Ťažšie">›</button></span>`:`<span>${p.v.lab}</span>`}</div>
+     ${(()=>{const a=autoIdx(ex,p.w),c=vIdx(ex,p.w);return a!==c?`<small class="adj">ručne zmenené · odporúčané: ${ex.v[a].lab}</small>`:'';})()}
      <div class="wkset">${all?'✓ všetky série hotové':`Séria <b>${p.done+1}</b> z ${s} · ${p.D.reps}`}</div>
      ${p.D.why&&p.D.why.length?`<small class="adj">↓ ${p.D.why.join(', ')}</small>`:''}
      <div class="wkin"><label>Opak.<input inputmode="numeric" data-f="r" data-w="${p.w}" value="${p.repsN}"></label>${p.defKg!==''||p.D.w?`<label>kg<input inputmode="decimal" data-f="k" data-w="${p.w}" value="${p.defKg}"></label>`:''}
@@ -63,6 +67,11 @@ document.addEventListener('click',e=>{if(!WK.on){if(e.target.closest('#wkGo'))wk
   const t=e.target;
   if(t.closest('#wkX'))return wkClose(true);
   if(t.closest('#wkBack'))return wkStep(Math.max(0,WK.i-1));
+  if(t.closest('#wkLv')){const b=document.getElementById('wkLvBox');b.hidden=!b.hidden;if(!b.hidden)b.innerHTML=wkLvHTML();return;}
+  const wl=t.closest('[data-wl]');if(wl){const w=wl.dataset.w;LV[w]=+wl.dataset.wl;for(const k in OV){if(OV[k])delete OV[k][w];}save();try{build();refreshLog();}catch(_){}
+    document.getElementById('wkLvBox').innerHTML=wkLvHTML();wkStep(WK.i,wkKeep());toast(WHO2[w]+': úroveň '+LV[w]);return;}
+  const wv=t.closest('[data-wv]');if(wv){const w=wv.dataset.w,ex=WK.cur.ex;const c=vIdx(ex,w);OV[ex.id]=OV[ex.id]||{};OV[ex.id][w]=clamp(c+(+wv.dataset.wv),0,ex.v.length-1);save();try{rerenderCard(ex.id);}catch(_){}
+    wkStep(WK.i,wkKeep());return;}
   if(t.closest('#wkVoice')){VOICE=!VOICE;try{localStorage.setItem('tr-voice',VOICE?'1':'0');}catch(_){}t.closest('#wkVoice').textContent=VOICE?'🔊':'🔇';return;}
   if(t.closest('#wkSkip')){clearInterval(WK.tid);document.getElementById('wkTimer').hidden=true;say('Ďalej');return;}
   if(t.closest('#wkT')){const s=+t.closest('#wkT').dataset.s;timerRun(s,'Drž',()=>say('Hotovo'));return;}

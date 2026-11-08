@@ -97,6 +97,7 @@ function wkFinish(){clearInterval(WK.tid);const sv=document.getElementById('wkVi
 document.addEventListener('click',e=>{if(!e.target.closest('#wkSave'))return;const mins=Math.round((Date.now()-WK.start)/60000);
   WK.who.forEach(w=>{const pain={};pain[w]={b:+(document.querySelector(`input[name=p${w}b]:checked`)||{}).value||0,h:+(document.querySelector(`input[name=p${w}h]:checked`)||{}).value||0};
     const ex={};for(const id in WK.log){if(WK.log[id][w])ex[id]={[w]:WK.log[id][w]};}
+    live().filter(x=>x.who===w&&x.d===WK.d&&x.t==='train').forEach(x=>delEntry(x.id));
     addEntry({who:w,d:WK.d,t:'train',var:WK.var,ex,pain,min:mins});});
   dbSave();wkClose(false);refreshLog();build();toast('💾 Tréning uložený ('+mins+' min)');
-  document.getElementById('dennik').scrollIntoView({behavior:'smooth'});});
+  calSel=WK.d;showTab('cal');});

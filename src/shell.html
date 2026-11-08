@@ -121,7 +121,7 @@ button.big.go{background:#2f7a3a}
 .syncbox{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:8px;font-size:.9rem}.syncbox input,.syncbox select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-top:3px}
 .syncbox .row{display:flex;flex-wrap:wrap;gap:8px}#syncSt.err{color:#b3261e;font-weight:700}
 small.adj{display:block;color:#9a6a00;font-weight:700}small.prog{display:block;color:#2f6a3a}
-#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#1f2328;color:#fff;padding:10px 16px;border-radius:12px;font-size:.9rem;opacity:0;transition:.25s;z-index:60;max-width:90vw;pointer-events:none}#toast.on{opacity:1;transform:translateX(-50%)}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#1f2328;color:#fff;padding:10px 16px;border-radius:12px;font-size:.9rem;opacity:0;transition:.25s;z-index:60;max-width:90vw;pointer-events:none}#toast.on{opacity:1;transform:translateX(-50%);pointer-events:auto}#toast{display:flex;align-items:center}
 body.wkon{overflow:hidden}body.wkon .timer{display:none}
 [hidden]{display:none!important}.no3dmsg{background:#fff3cd;color:#6b4e00;padding:10px 14px;font-size:.9rem;text-align:center}
 .wk{position:fixed;inset:0;z-index:50;background:var(--bg,#f5f1ea);display:flex;flex-direction:column}
@@ -152,6 +152,22 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
 .wktimer b{font-size:2.4rem;font-variant-numeric:tabular-nums}.wktimer span{flex:1;font-size:1rem}.wktimer button{font:inherit;padding:9px 14px;border-radius:99px;border:0;background:#fff;color:#111}
 .pain{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:6px 0;font-size:.9rem}.pain span{width:100%;font-weight:700;font-size:.85rem}
 .wkcard.two{display:grid;grid-template-columns:1fr 1fr}.wkcard.two .v3{height:auto}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;background:rgba(255,255,255,.97);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+.tabs button{flex:1;font:inherit;font-size:.8rem;font-weight:700;border:0;background:none;color:var(--mute);padding:6px 2px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer}.tabs button i{font-style:normal;font-size:1.35rem;line-height:1.2}
+.tabs button.on{color:var(--ink);background:#efe9df}
+body{padding-bottom:76px}body.wkon .tabs{display:none}
+body:not([data-tab=ex]) .controls{display:none}body:not([data-tab=cal]) .wrap>h1,body:not([data-tab=cal]) .wrap>.sub{display:none}#segVar2{margin-top:10px}
+@media(max-width:640px){.wrap>h1{font-size:1.35rem}.wrap>.sub{display:none}}
+@media(min-width:900px){.tabs{left:50%;transform:translateX(-50%);bottom:12px;width:min(560px,92%);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,.12)}.tabs button{font-size:.9rem}}
+.calday{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.calday h4{margin:0 0 6px;font-size:1.05rem}
+.dayrec{border-radius:10px;padding:8px 10px;margin:6px 0;font-size:.92rem}.dayrec.m{background:var(--mama-bg)}.dayrec.t{background:var(--tato-bg)}.dayrec.both{background:#eaf5ea}.dayrec p{margin:2px 0}
+.qadd{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.qadd>span{flex-basis:100%;font-size:.85rem;color:var(--mute)}
+.qadd button{font:inherit;font-size:.92rem;padding:9px 13px;border-radius:99px;border:1px solid var(--line);background:#fbf8f3;cursor:pointer}
+.qadd button.on{background:#2f7a3a;border-color:#2f7a3a;color:#fff}.qadd button.part{background:#e3f1e3;border-color:#2f7a3a}
+.cd .rk{position:absolute;top:3px;right:4px;display:flex;gap:2px}.cd{position:relative}.cd .rk u{width:7px;height:7px;border-radius:50%;display:block}.cd .rk u.m{background:var(--mama)}.cd .rk u.t{background:var(--tato)}
+.cd.rec{border-style:dashed;border-color:#2f7a3a;background:#f4faf3}.cd.fut.rec{opacity:1}.lgrec{color:#2f7a3a;font-weight:800}.tdd{font-size:.95rem;color:var(--mute);font-weight:600}
+@media(min-width:900px){.cal{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}.calday{border-top:0;margin-top:0;padding-top:0}}
+#toast button{font:inherit;font-weight:800;margin-left:12px;background:#fff;color:#111;border:0;border-radius:99px;padding:4px 12px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -167,29 +183,17 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
   </div>
 </div>
 
+<section class="tab" id="tab-cal">
 <div class="todaybox" id="todayBox">
-  <div class="tdhead"><h2 style="margin:0">📅 Dnes</h2><span id="syncBadge" class="sb" title="">📱</span></div>
+  <div class="tdhead"><h2 style="margin:0">📅 Dnes <span id="tdDate" class="tdd"></span></h2><span id="syncBadge" class="sb" title="">📱</span></div>
   <div class="today" id="today"></div>
-  <div class="gobox"><span>Kto cvičí:</span><label><input type="checkbox" id="ww-m" checked> Mama</label><label><input type="checkbox" id="ww-t" checked> Tato</label>
+  <div class="seg" id="segVar2"><button data-v="home">🏠 Doma</button><button data-v="gym">🏋️ Domáca posilňovňa</button><button data-v="fit">🏢 Fitnes&shy;centrum</button></div>
+  <div class="gobox"><span>Kto:</span><label><input type="checkbox" id="ww-m" checked> Mama</label><label><input type="checkbox" id="ww-t" checked> Tato</label>
     <button type="button" class="big go" id="wkGo">▶ Cvičíme</button></div>
-  <div class="qbox"><span>Rýchly zápis:</span><input type="date" id="qDate"><label><input type="checkbox" id="qw-m" checked> Mama</label><label><input type="checkbox" id="qw-t" checked> Tato</label>
-    <div class="qbtns" id="qbtns"><button type="button" data-qa="sm">🧘 SM systém</button><button type="button" data-qa="pil">🤸 Pilates</button><button type="button" data-qa="hike">🥾 Turistika</button><button type="button" data-qa="swim">🏊 Plávanie</button><button type="button" data-qa="walk">🚶 Prechádzka</button></div></div>
 </div>
-
-<h2>Ako to funguje</h2>
-<div class="grid2">
-  <div class="box"><h3>Priebeh tréningu</h3><ul class="tight">
-    <li><b>1. Rozcvička</b> – 7 min, rovnaká pre všetkých.</li>
-    <li><b>2. Hlavná časť</b> – cviky <b>klasicky po sériách</b>: najprv všetky série jedného cviku (napr. 3 série × 10), potom ďalší cvik.</li>
-    <li>Kým jeden cvičí sériu, druhý oddychuje a kontroluje techniku podľa bodov „Pozor“. Potom sa vymeníte.</li>
-    <li>Pauza medzi sériami je pri každom cviku (45–90 s) – použite časovač dole.</li>
-    <li><b>3. Strečing</b> – 6 min na upokojenie.</li></ul></div>
-  <div class="box"><h3>Úrovne a obťiažnosť</h3><ul class="tight">
-    <li>Hore si mama aj tato nastavia <b>vlastnú úroveň 1–4</b> (1 = začiatok, 2 = mierne pokročilý, 3 = pokročilý, 4 = veľmi pokročilý – veľká činka na chrbte, ťažšie váhy, 4 série). Na úroveň 4 prejdite až keď úroveň 3 zvládate s rezervou aspoň 4 týždne a bez bolesti.</li>
-    <li>Ak je konkrétny cvik ťažký alebo ľahký, pri cviku stlačte <b>‹ Ľahšie</b> alebo <b>Ťažšie ›</b> – zmení sa aj ukážka.</li>
-    <li><b>Kedy pridať:</b> keď dva tréningy po sebe zvládnete všetky série a ešte by ste dali 2–3 opakovania navyše.</li>
-    <li>Tempo 2 s hore, 2–3 s dole, pri námahe výdych, nikdy nezadržiavať dych.</li></ul></div>
-</div>
+<div class="cal" id="cal"></div>
+</section>
+<section class="tab" id="tab-ex" hidden>
 <div class="note" id="lvNote"></div>
 <div class="grid2">
   <div class="box" style="border-left:5px solid var(--mama)"><h3 style="color:var(--mama)">Úpravy pre mamu (platnička)</h3><ul class="tight">
@@ -205,13 +209,6 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
 </div>
 <div class="note w"><b>3D ukážky:</b> postava stále predvádza cvik. Ak si ju chceš otočiť, <b>ťukni na ňu</b> a potom ťahaj prstom. Ďalším ťuknutím otáčanie vypneš – pri skrolovaní sa nič nehýbe.</div>
 
-<h2>Týždeň</h2>
-<div class="week">
-  <div class="day tr"><b>Po</b>Tréning</div><div class="day pl"><b>Ut</b>Pilates / SM</div><div class="day tr"><b>St</b>Tréning</div>
-  <div class="day"><b>Št</b>Svižná chôdza 30–45 min</div><div class="day tr"><b>Pi</b>Tréning<br><small>(1. a 2. týždeň voľno)</small></div>
-  <div class="day hk"><b>So</b>Turistika</div><div class="day"><b>Ne</b>Voľno</div>
-</div>
-<p class="sub" style="margin-top:8px">Varianty doma / domáca posilňovňa / fitnescentrum môžete ľubovoľne miešať (napr. Po fitko, St doma). Medzi tréningami aspoň 1 deň bez posilňovania.</p>
 <div class="note"><b>Vo fitnescentre:</b> pri prvej návšteve požiadajte trénera, nech vám nastaví sedadlá na strojoch – nastavenie (číslo dierky) si zapíšte. Závažia sa na rôznych strojoch líšia, uvedené kilá sú len orientačné: vyberte váhu, pri ktorej sú posledné 2 opakovania ťažké, ale technika ostáva čistá. Keď zvládnete všetky série s rezervou, pridajte jeden plát.</div>
 
 <div class="sect"><h2>1. Rozcvička</h2><span class="time">≈ 7 min</span></div>
@@ -221,6 +218,26 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
 <div class="sect"><h2>3. Strečing</h2><span class="time">≈ 6 min</span></div>
 <div class="cards" id="cool"></div>
 
+</section>
+<section class="tab" id="tab-prog" hidden>
+<h2>📈 Pokrok</h2><div id="charts"></div>
+<h2>🗓 Plán na 4 týždne</h2><div id="plan4"></div>
+</section>
+<section class="tab" id="tab-info" hidden>
+<h2>Ako to funguje</h2>
+<div class="grid2">
+  <div class="box"><h3>Priebeh tréningu</h3><ul class="tight">
+    <li><b>1. Rozcvička</b> – 7 min, rovnaká pre všetkých.</li>
+    <li><b>2. Hlavná časť</b> – cviky <b>klasicky po sériách</b>: najprv všetky série jedného cviku (napr. 3 série × 10), potom ďalší cvik.</li>
+    <li>Kým jeden cvičí sériu, druhý oddychuje a kontroluje techniku podľa bodov „Pozor“. Potom sa vymeníte.</li>
+    <li>Pauza medzi sériami je pri každom cviku (45–90 s) – v režime <b>▶ Cvičíme</b> sa odpočítava sama.</li>
+    <li><b>3. Strečing</b> – 6 min na upokojenie.</li></ul></div>
+  <div class="box"><h3>Úrovne a obťiažnosť</h3><ul class="tight">
+    <li>V záložke <b>Cviky</b> (alebo počas cvičenia tlačidlom Úroveň) si mama aj tato nastavia <b>vlastnú úroveň 1–4</b> (1 = začiatok, 2 = mierne pokročilý, 3 = pokročilý, 4 = veľmi pokročilý – veľká činka na chrbte, ťažšie váhy, 4 série). Na úroveň 4 prejdite až keď úroveň 3 zvládate s rezervou aspoň 4 týždne a bez bolesti.</li>
+    <li>Ak je konkrétny cvik ťažký alebo ľahký, pri cviku stlačte <b>‹ Ľahšie</b> alebo <b>Ťažšie ›</b> – zmení sa aj ukážka.</li>
+    <li><b>Kedy pridať:</b> keď dva tréningy po sebe zvládnete všetky série a ešte by ste dali 2–3 opakovania navyše.</li>
+    <li>Tempo 2 s hore, 2–3 s dole, pri námahe výdych, nikdy nezadržiavať dych.</li></ul></div>
+</div>
 <h2>Kondícia a chudnutie</h2>
 <div class="grid2">
   <div class="box"><h3>Kondícia</h3><ul class="tight">
@@ -242,13 +259,11 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
   <li>🔴 <b>5 a viac</b>, ostrá alebo vystreľujúca bolesť, tŕpnutie, závrat, tlak na hrudi – <b>prestaňte</b> a poraďte sa s lekárom.</li></ul>
   <p>Pri platničke, bedrovom kĺbe, vysokom tlaku či inej diagnóze ukážte plán najprv lekárovi alebo fyzioterapeutovi.</p></div>
 
-<h2 id="dennik">📖 Denník</h2><p class="sub">Ťukni na deň – zobrazia sa záznamy, dajú sa pridať aj zmazať.</p>
-<div class="cal" id="cal"></div>
-<h2>📈 Pokrok</h2><div id="charts"></div>
-<h2>🗓 Plán na 4 týždne</h2><div id="plan4"></div>
 <h2>☁ Ukladanie a záloha</h2><div class="syncbox" id="syncBox"></div>
 <p class="foot">3D postavy sú vytvorené z voľne použiteľných (CC0) modelov MakeHuman, upravené podľa fotiek. Odkazy na videá sú navyše (v angličtine). Plán je všeobecný a nenahrádza radu lekára ani fyzioterapeuta.</p>
+</section>
 </div>
+<nav class="tabs" id="tabs"><button type="button" data-tab="cal" class="on"><i>📅</i>Kalendár</button><button type="button" data-tab="ex"><i>🏋️</i>Cviky</button><button type="button" data-tab="prog"><i>📈</i>Pokrok</button><button type="button" data-tab="info"><i>ℹ️</i>Info</button></nav>
 <div class="wk" id="wk" hidden>
   <div class="wktop"><button type="button" id="wkX" aria-label="Zavrieť">✕</button><div class="wkh" id="wkHead"></div><button type="button" id="wkLv" class="wklvb">Úroveň</button><button type="button" id="wkVoice">🔊</button></div>
   <div class="wklvbox" id="wkLvBox" hidden></div>
@@ -257,7 +272,6 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
   <div class="wkfoot"><button type="button" id="wkBack">← Späť</button></div>
   <div class="wktimer" id="wkTimer" hidden></div>
 </div>
-<div class="timer" id="timer"><span class="tv" id="tv">0:00</span><button data-s="45">45 s</button><button data-s="60">1 min</button><button data-s="90">1:30</button><button data-s="120">2 min</button><button class="stop" id="tstop">■</button></div>
 <script>
 /*__SCRIPTS__*/
 </script>

@@ -132,18 +132,18 @@ function build(){
   fill('warm',WARM);fill('main',MAINL());fill('cool',COOL);
   document.getElementById('mainTitle').textContent='2. Hlavná časť – '+({home:'doma',gym:'domáca posilňovňa',fit:'fitnescentrum'}[VAR]);
   const lmax=Math.max(LV.m,LV.t);document.getElementById('mainTime').textContent=VAR==='fit'?(lmax===1?'≈ 40–45 min':lmax>=3?'≈ 60–70 min':'≈ 50–60 min'):(lmax===1?'≈ 25–30 min':lmax===4?'≈ 45–55 min':'≈ 35–45 min');
-  document.querySelectorAll('#segVar button').forEach(b=>b.classList.toggle('on',b.dataset.v===VAR));
+  document.querySelectorAll('#segVar button,#segVar2 button').forEach(b=>b.classList.toggle('on',b.dataset.v===VAR));
   document.querySelectorAll('.lvseg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.l===LV[g.dataset.who])));
   document.getElementById('lvNote').innerHTML=lvNote();
 }
 const LVN=['začiatočník','mierne pokročilý','pokročilý','veľmi pokročilý'];
 function lvNote(){return `<b>Mama:</b> úroveň ${LV.m} (${LVN[LV.m-1]}) · <b>Tato:</b> úroveň ${LV.t} (${LVN[LV.t-1]}). Úroveň mení verziu cvikov, počet sérií, opakovaní aj váhu; pri ťažších verziách pribudnú pod popisom aj ich vlastné pokyny. Pri každom cviku sa dá ešte prepnúť <b>‹ Ľahšie / Ťažšie ›</b>.`;}
-document.getElementById('segVar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;VAR=b.dataset.v;save();build();});
+['segVar','segVar2'].forEach(id=>{const g=document.getElementById(id);g&&g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;VAR=b.dataset.v;save();build();});});
 document.querySelectorAll('.lvseg').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const who=g.dataset.who;LV[who]=+b.dataset.l;for(const k in OV){if(OV[k])delete OV[k][who];}save();build();}));
 document.addEventListener('click',e=>{const b=e.target.closest('.vrow button');if(!b)return;const ex=[...WARM,...HOME,...GYM,...FIT,...COOL].find(x=>x.id===b.dataset.ex);if(!ex)return;
   const who=b.dataset.who;const cur=vIdx(ex,who);OV[ex.id]=OV[ex.id]||{};OV[ex.id][who]=clamp(cur+(+b.dataset.d),0,ex.v.length-1);save();rerenderCard(ex.id);});
 /* timer */
-(function(){let end=0,tid=null,ac=null;const tv=document.getElementById('tv'),box=document.getElementById('timer');const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+(function(){let end=0,tid=null,ac=null;const tv=document.getElementById('tv'),box=document.getElementById('timer');if(!box)return;const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
   function beep(){try{if(!ac)return;[0,0.35,0.7].forEach(t=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(0.25,ac.currentTime+t);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+t+0.3);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+0.3);});}catch(e){}}
   function tick(){const s=Math.max(0,Math.ceil((end-Date.now())/1000));tv.textContent=fmt(s);if(s<=0){clearInterval(tid);tid=null;box.classList.remove('done');void box.offsetWidth;box.classList.add('done');beep();}}
   box.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;try{if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume();}catch(_){}

@@ -126,7 +126,7 @@ button.big.go{background:#2f7a3a}
 .syncbox{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:8px;font-size:.9rem}.syncbox input,.syncbox select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-top:3px}
 .syncbox .row{display:flex;flex-wrap:wrap;gap:8px}#syncSt.err{color:#b3261e;font-weight:700}
 small.adj{display:block;color:#9a6a00;font-weight:700}small.prog{display:block;color:#2f6a3a}
-#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#1f2328;color:#fff;padding:10px 16px;border-radius:12px;font-size:.9rem;opacity:0;transition:.25s;z-index:60;max-width:90vw;pointer-events:none}#toast.on{opacity:1;transform:translateX(-50%)}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#1f2328;color:#fff;padding:10px 16px;border-radius:12px;font-size:.9rem;opacity:0;transition:.25s;z-index:60;max-width:90vw;pointer-events:none}#toast.on{opacity:1;transform:translateX(-50%);pointer-events:auto}#toast{display:flex;align-items:center}
 body.wkon{overflow:hidden}body.wkon .timer{display:none}
 [hidden]{display:none!important}.no3dmsg{background:#fff3cd;color:#6b4e00;padding:10px 14px;font-size:.9rem;text-align:center}
 .wk{position:fixed;inset:0;z-index:50;background:var(--bg,#f5f1ea);display:flex;flex-direction:column}
@@ -157,6 +157,22 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
 .wktimer b{font-size:2.4rem;font-variant-numeric:tabular-nums}.wktimer span{flex:1;font-size:1rem}.wktimer button{font:inherit;padding:9px 14px;border-radius:99px;border:0;background:#fff;color:#111}
 .pain{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:6px 0;font-size:.9rem}.pain span{width:100%;font-weight:700;font-size:.85rem}
 .wkcard.two{display:grid;grid-template-columns:1fr 1fr}.wkcard.two .v3{height:auto}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;background:rgba(255,255,255,.97);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+.tabs button{flex:1;font:inherit;font-size:.8rem;font-weight:700;border:0;background:none;color:var(--mute);padding:6px 2px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer}.tabs button i{font-style:normal;font-size:1.35rem;line-height:1.2}
+.tabs button.on{color:var(--ink);background:#efe9df}
+body{padding-bottom:76px}body.wkon .tabs{display:none}
+body:not([data-tab=ex]) .controls{display:none}body:not([data-tab=cal]) .wrap>h1,body:not([data-tab=cal]) .wrap>.sub{display:none}#segVar2{margin-top:10px}
+@media(max-width:640px){.wrap>h1{font-size:1.35rem}.wrap>.sub{display:none}}
+@media(min-width:900px){.tabs{left:50%;transform:translateX(-50%);bottom:12px;width:min(560px,92%);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,.12)}.tabs button{font-size:.9rem}}
+.calday{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.calday h4{margin:0 0 6px;font-size:1.05rem}
+.dayrec{border-radius:10px;padding:8px 10px;margin:6px 0;font-size:.92rem}.dayrec.m{background:var(--mama-bg)}.dayrec.t{background:var(--tato-bg)}.dayrec.both{background:#eaf5ea}.dayrec p{margin:2px 0}
+.qadd{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.qadd>span{flex-basis:100%;font-size:.85rem;color:var(--mute)}
+.qadd button{font:inherit;font-size:.92rem;padding:9px 13px;border-radius:99px;border:1px solid var(--line);background:#fbf8f3;cursor:pointer}
+.qadd button.on{background:#2f7a3a;border-color:#2f7a3a;color:#fff}.qadd button.part{background:#e3f1e3;border-color:#2f7a3a}
+.cd .rk{position:absolute;top:3px;right:4px;display:flex;gap:2px}.cd{position:relative}.cd .rk u{width:7px;height:7px;border-radius:50%;display:block}.cd .rk u.m{background:var(--mama)}.cd .rk u.t{background:var(--tato)}
+.cd.rec{border-style:dashed;border-color:#2f7a3a;background:#f4faf3}.cd.fut.rec{opacity:1}.lgrec{color:#2f7a3a;font-weight:800}.tdd{font-size:.95rem;color:var(--mute);font-weight:600}
+@media(min-width:900px){.cal{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}.calday{border-top:0;margin-top:0;padding-top:0}}
+#toast button{font:inherit;font-weight:800;margin-left:12px;background:#fff;color:#111;border:0;border-radius:99px;padding:4px 12px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -172,29 +188,17 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
   </div>
 </div>
 
+<section class="tab" id="tab-cal">
 <div class="todaybox" id="todayBox">
-  <div class="tdhead"><h2 style="margin:0">📅 Dnes</h2><span id="syncBadge" class="sb" title="">📱</span></div>
+  <div class="tdhead"><h2 style="margin:0">📅 Dnes <span id="tdDate" class="tdd"></span></h2><span id="syncBadge" class="sb" title="">📱</span></div>
   <div class="today" id="today"></div>
-  <div class="gobox"><span>Kto cvičí:</span><label><input type="checkbox" id="ww-m" checked> Mama</label><label><input type="checkbox" id="ww-t" checked> Tato</label>
+  <div class="seg" id="segVar2"><button data-v="home">🏠 Doma</button><button data-v="gym">🏋️ Domáca posilňovňa</button><button data-v="fit">🏢 Fitnes&shy;centrum</button></div>
+  <div class="gobox"><span>Kto:</span><label><input type="checkbox" id="ww-m" checked> Mama</label><label><input type="checkbox" id="ww-t" checked> Tato</label>
     <button type="button" class="big go" id="wkGo">▶ Cvičíme</button></div>
-  <div class="qbox"><span>Rýchly zápis:</span><input type="date" id="qDate"><label><input type="checkbox" id="qw-m" checked> Mama</label><label><input type="checkbox" id="qw-t" checked> Tato</label>
-    <div class="qbtns" id="qbtns"><button type="button" data-qa="sm">🧘 SM systém</button><button type="button" data-qa="pil">🤸 Pilates</button><button type="button" data-qa="hike">🥾 Turistika</button><button type="button" data-qa="swim">🏊 Plávanie</button><button type="button" data-qa="walk">🚶 Prechádzka</button></div></div>
 </div>
-
-<h2>Ako to funguje</h2>
-<div class="grid2">
-  <div class="box"><h3>Priebeh tréningu</h3><ul class="tight">
-    <li><b>1. Rozcvička</b> – 7 min, rovnaká pre všetkých.</li>
-    <li><b>2. Hlavná časť</b> – cviky <b>klasicky po sériách</b>: najprv všetky série jedného cviku (napr. 3 série × 10), potom ďalší cvik.</li>
-    <li>Kým jeden cvičí sériu, druhý oddychuje a kontroluje techniku podľa bodov „Pozor“. Potom sa vymeníte.</li>
-    <li>Pauza medzi sériami je pri každom cviku (45–90 s) – použite časovač dole.</li>
-    <li><b>3. Strečing</b> – 6 min na upokojenie.</li></ul></div>
-  <div class="box"><h3>Úrovne a obťiažnosť</h3><ul class="tight">
-    <li>Hore si mama aj tato nastavia <b>vlastnú úroveň 1–4</b> (1 = začiatok, 2 = mierne pokročilý, 3 = pokročilý, 4 = veľmi pokročilý – veľká činka na chrbte, ťažšie váhy, 4 série). Na úroveň 4 prejdite až keď úroveň 3 zvládate s rezervou aspoň 4 týždne a bez bolesti.</li>
-    <li>Ak je konkrétny cvik ťažký alebo ľahký, pri cviku stlačte <b>‹ Ľahšie</b> alebo <b>Ťažšie ›</b> – zmení sa aj ukážka.</li>
-    <li><b>Kedy pridať:</b> keď dva tréningy po sebe zvládnete všetky série a ešte by ste dali 2–3 opakovania navyše.</li>
-    <li>Tempo 2 s hore, 2–3 s dole, pri námahe výdych, nikdy nezadržiavať dych.</li></ul></div>
-</div>
+<div class="cal" id="cal"></div>
+</section>
+<section class="tab" id="tab-ex" hidden>
 <div class="note" id="lvNote"></div>
 <div class="grid2">
   <div class="box" style="border-left:5px solid var(--mama)"><h3 style="color:var(--mama)">Úpravy pre mamu (platnička)</h3><ul class="tight">
@@ -210,13 +214,6 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
 </div>
 <div class="note w"><b>3D ukážky:</b> postava stále predvádza cvik. Ak si ju chceš otočiť, <b>ťukni na ňu</b> a potom ťahaj prstom. Ďalším ťuknutím otáčanie vypneš – pri skrolovaní sa nič nehýbe.</div>
 
-<h2>Týždeň</h2>
-<div class="week">
-  <div class="day tr"><b>Po</b>Tréning</div><div class="day pl"><b>Ut</b>Pilates / SM</div><div class="day tr"><b>St</b>Tréning</div>
-  <div class="day"><b>Št</b>Svižná chôdza 30–45 min</div><div class="day tr"><b>Pi</b>Tréning<br><small>(1. a 2. týždeň voľno)</small></div>
-  <div class="day hk"><b>So</b>Turistika</div><div class="day"><b>Ne</b>Voľno</div>
-</div>
-<p class="sub" style="margin-top:8px">Varianty doma / domáca posilňovňa / fitnescentrum môžete ľubovoľne miešať (napr. Po fitko, St doma). Medzi tréningami aspoň 1 deň bez posilňovania.</p>
 <div class="note"><b>Vo fitnescentre:</b> pri prvej návšteve požiadajte trénera, nech vám nastaví sedadlá na strojoch – nastavenie (číslo dierky) si zapíšte. Závažia sa na rôznych strojoch líšia, uvedené kilá sú len orientačné: vyberte váhu, pri ktorej sú posledné 2 opakovania ťažké, ale technika ostáva čistá. Keď zvládnete všetky série s rezervou, pridajte jeden plát.</div>
 
 <div class="sect"><h2>1. Rozcvička</h2><span class="time">≈ 7 min</span></div>
@@ -226,6 +223,26 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
 <div class="sect"><h2>3. Strečing</h2><span class="time">≈ 6 min</span></div>
 <div class="cards" id="cool"></div>
 
+</section>
+<section class="tab" id="tab-prog" hidden>
+<h2>📈 Pokrok</h2><div id="charts"></div>
+<h2>🗓 Plán na 4 týždne</h2><div id="plan4"></div>
+</section>
+<section class="tab" id="tab-info" hidden>
+<h2>Ako to funguje</h2>
+<div class="grid2">
+  <div class="box"><h3>Priebeh tréningu</h3><ul class="tight">
+    <li><b>1. Rozcvička</b> – 7 min, rovnaká pre všetkých.</li>
+    <li><b>2. Hlavná časť</b> – cviky <b>klasicky po sériách</b>: najprv všetky série jedného cviku (napr. 3 série × 10), potom ďalší cvik.</li>
+    <li>Kým jeden cvičí sériu, druhý oddychuje a kontroluje techniku podľa bodov „Pozor“. Potom sa vymeníte.</li>
+    <li>Pauza medzi sériami je pri každom cviku (45–90 s) – v režime <b>▶ Cvičíme</b> sa odpočítava sama.</li>
+    <li><b>3. Strečing</b> – 6 min na upokojenie.</li></ul></div>
+  <div class="box"><h3>Úrovne a obťiažnosť</h3><ul class="tight">
+    <li>V záložke <b>Cviky</b> (alebo počas cvičenia tlačidlom Úroveň) si mama aj tato nastavia <b>vlastnú úroveň 1–4</b> (1 = začiatok, 2 = mierne pokročilý, 3 = pokročilý, 4 = veľmi pokročilý – veľká činka na chrbte, ťažšie váhy, 4 série). Na úroveň 4 prejdite až keď úroveň 3 zvládate s rezervou aspoň 4 týždne a bez bolesti.</li>
+    <li>Ak je konkrétny cvik ťažký alebo ľahký, pri cviku stlačte <b>‹ Ľahšie</b> alebo <b>Ťažšie ›</b> – zmení sa aj ukážka.</li>
+    <li><b>Kedy pridať:</b> keď dva tréningy po sebe zvládnete všetky série a ešte by ste dali 2–3 opakovania navyše.</li>
+    <li>Tempo 2 s hore, 2–3 s dole, pri námahe výdych, nikdy nezadržiavať dych.</li></ul></div>
+</div>
 <h2>Kondícia a chudnutie</h2>
 <div class="grid2">
   <div class="box"><h3>Kondícia</h3><ul class="tight">
@@ -247,13 +264,11 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
   <li>🔴 <b>5 a viac</b>, ostrá alebo vystreľujúca bolesť, tŕpnutie, závrat, tlak na hrudi – <b>prestaňte</b> a poraďte sa s lekárom.</li></ul>
   <p>Pri platničke, bedrovom kĺbe, vysokom tlaku či inej diagnóze ukážte plán najprv lekárovi alebo fyzioterapeutovi.</p></div>
 
-<h2 id="dennik">📖 Denník</h2><p class="sub">Ťukni na deň – zobrazia sa záznamy, dajú sa pridať aj zmazať.</p>
-<div class="cal" id="cal"></div>
-<h2>📈 Pokrok</h2><div id="charts"></div>
-<h2>🗓 Plán na 4 týždne</h2><div id="plan4"></div>
 <h2>☁ Ukladanie a záloha</h2><div class="syncbox" id="syncBox"></div>
 <p class="foot">3D postavy sú vytvorené z voľne použiteľných (CC0) modelov MakeHuman, upravené podľa fotiek. Odkazy na videá sú navyše (v angličtine). Plán je všeobecný a nenahrádza radu lekára ani fyzioterapeuta.</p>
+</section>
 </div>
+<nav class="tabs" id="tabs"><button type="button" data-tab="cal" class="on"><i>📅</i>Kalendár</button><button type="button" data-tab="ex"><i>🏋️</i>Cviky</button><button type="button" data-tab="prog"><i>📈</i>Pokrok</button><button type="button" data-tab="info"><i>ℹ️</i>Info</button></nav>
 <div class="wk" id="wk" hidden>
   <div class="wktop"><button type="button" id="wkX" aria-label="Zavrieť">✕</button><div class="wkh" id="wkHead"></div><button type="button" id="wkLv" class="wklvb">Úroveň</button><button type="button" id="wkVoice">🔊</button></div>
   <div class="wklvbox" id="wkLvBox" hidden></div>
@@ -262,7 +277,6 @@ body.wkon{overflow:hidden}body.wkon .timer{display:none}
   <div class="wkfoot"><button type="button" id="wkBack">← Späť</button></div>
   <div class="wktimer" id="wkTimer" hidden></div>
 </div>
-<div class="timer" id="timer"><span class="tv" id="tv">0:00</span><button data-s="45">45 s</button><button data-s="60">1 min</button><button data-s="90">1:30</button><button data-s="120">2 min</button><button class="stop" id="tstop">■</button></div>
 <script>
 /* ===== Realistic avatar runtime (MakeHuman-based, CC0) ===== */
 const AV={};          // decoded avatars: AV.m, AV.t
@@ -1864,18 +1878,18 @@ function build(){
   fill('warm',WARM);fill('main',MAINL());fill('cool',COOL);
   document.getElementById('mainTitle').textContent='2. Hlavná časť – '+({home:'doma',gym:'domáca posilňovňa',fit:'fitnescentrum'}[VAR]);
   const lmax=Math.max(LV.m,LV.t);document.getElementById('mainTime').textContent=VAR==='fit'?(lmax===1?'≈ 40–45 min':lmax>=3?'≈ 60–70 min':'≈ 50–60 min'):(lmax===1?'≈ 25–30 min':lmax===4?'≈ 45–55 min':'≈ 35–45 min');
-  document.querySelectorAll('#segVar button').forEach(b=>b.classList.toggle('on',b.dataset.v===VAR));
+  document.querySelectorAll('#segVar button,#segVar2 button').forEach(b=>b.classList.toggle('on',b.dataset.v===VAR));
   document.querySelectorAll('.lvseg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.l===LV[g.dataset.who])));
   document.getElementById('lvNote').innerHTML=lvNote();
 }
 const LVN=['začiatočník','mierne pokročilý','pokročilý','veľmi pokročilý'];
 function lvNote(){return `<b>Mama:</b> úroveň ${LV.m} (${LVN[LV.m-1]}) · <b>Tato:</b> úroveň ${LV.t} (${LVN[LV.t-1]}). Úroveň mení verziu cvikov, počet sérií, opakovaní aj váhu; pri ťažších verziách pribudnú pod popisom aj ich vlastné pokyny. Pri každom cviku sa dá ešte prepnúť <b>‹ Ľahšie / Ťažšie ›</b>.`;}
-document.getElementById('segVar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;VAR=b.dataset.v;save();build();});
+['segVar','segVar2'].forEach(id=>{const g=document.getElementById(id);g&&g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;VAR=b.dataset.v;save();build();});});
 document.querySelectorAll('.lvseg').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const who=g.dataset.who;LV[who]=+b.dataset.l;for(const k in OV){if(OV[k])delete OV[k][who];}save();build();}));
 document.addEventListener('click',e=>{const b=e.target.closest('.vrow button');if(!b)return;const ex=[...WARM,...HOME,...GYM,...FIT,...COOL].find(x=>x.id===b.dataset.ex);if(!ex)return;
   const who=b.dataset.who;const cur=vIdx(ex,who);OV[ex.id]=OV[ex.id]||{};OV[ex.id][who]=clamp(cur+(+b.dataset.d),0,ex.v.length-1);save();rerenderCard(ex.id);});
 /* timer */
-(function(){let end=0,tid=null,ac=null;const tv=document.getElementById('tv'),box=document.getElementById('timer');const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+(function(){let end=0,tid=null,ac=null;const tv=document.getElementById('tv'),box=document.getElementById('timer');if(!box)return;const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
   function beep(){try{if(!ac)return;[0,0.35,0.7].forEach(t=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(0.25,ac.currentTime+t);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+t+0.3);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+0.3);});}catch(e){}}
   function tick(){const s=Math.max(0,Math.ceil((end-Date.now())/1000));tv.textContent=fmt(s);if(s<=0){clearInterval(tid);tid=null;box.classList.remove('done');void box.offsetWidth;box.classList.add('done');beep();}}
   box.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;try{if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume();}catch(_){}
@@ -2043,13 +2057,23 @@ doseHTML=function(ex,who){if(ex.both)return null;const D=doseOf(ex,who);
   return `<div class="${who}"><b>${WHO[who]}</b><span class="sets">${D.sets?`${D.sets} ${seriesWord(D.sets)} × ${D.reps}`:D.reps}</span>${extra?`<small>${extra}</small>`:''}${D.why&&D.why.length?`<small class="adj">↓ ${D.why.join(', ')}</small>`:''}${ph?`<small class="prog">${ph}</small>`:''}</div>`;};
 
 /* ---------- Today panel, diary, calendar, charts ---------- */
-function refreshLog(){RECS={m:recFor('m'),t:recFor('t')};renderToday();renderCal();renderCharts();renderPlan();}
-function renderToday(){const el=document.getElementById('today');if(!el)return;
-  el.innerHTML=['m','t'].map(w=>{const R=RECS[w];return `<div class="tdy ${w}"><h4>${WHO2[w]} <span class="st ${R.status}">${{go:'tréning',rest:'voľno',done:'hotovo'}[R.status]}</span></h4>${R.lines.map(l=>`<p>${l}</p>`).join('')}<p class="mute">${R.week}${R.next?' · '+R.next:''}</p><p class="mute">Cyklus: týždeň ${R.wk} zo 4${R.deload?' (ľahší týždeň)':''}</p>${R.lvlUp?`<p class="up">${R.lvlUp}</p>`:''}</div>`;}).join('');}
+function dedupe(){const keep=new Map();let ch=false;
+  live().forEach(x=>{const k=x.who+'|'+x.d+'|'+x.t;const o=keep.get(k);if(!o){keep.set(k,x);return;}
+    const sc=y=>(y.ex?1e6+Object.keys(y.ex).length:0)+(y.u||0)/1e13;const [win,lose]=sc(x)>sc(o)?[x,o]:[o,x];keep.set(k,win);delEntry(lose.id);ch=true;});
+  if(ch)dbSave();return ch;}
+function refreshLog(){dedupe();RECS={m:recFor('m'),t:recFor('t')};renderToday();renderCal();renderCharts();renderPlan();}
+function renderToday(){const el=document.getElementById('tdDate');if(el)el.textContent=fmtD(today());}
+/* projected recommended training days (1 rest day between, max 3 per week) */
+function recDays(w){const t=today();const tr=entries(w).filter(x=>x.t==='train').map(x=>x.d);const set=new Set(tr);
+  let last=tr.filter(d=>d<t).pop();const out=new Set();const wc={};tr.forEach(d=>{const m=monday(d);wc[m]=(wc[m]||0)+1;});
+  for(let k=0;k<42;k++){const d=addDays(t,k);if(set.has(d)){last=d;continue;}const m=monday(d);
+    if((!last||daysBetween(last,d)>=2)&&(wc[m]||0)<3){out.add(d);last=d;wc[m]=(wc[m]||0)+1;}}
+  return out;}
+let RD={m:new Set(),t:new Set()};
 const MES=['január','február','marec','apríl','máj','jún','júl','august','september','október','november','december'];
 let calYM=null,calSel=null;
 function vs(o){const k=Object.keys(VARI).filter(v=>o[v]);return k.length?' ('+k.map(v=>VARI[v].i+o[v]).join(' ')+')':'';}
-function renderCal(){const el=document.getElementById('cal');if(!el)return;const t=today();
+function renderCal(){const el=document.getElementById('cal');if(!el)return;const t=today();RD={m:recDays('m'),t:recDays('t')};if(!calSel)calSel=t;
   if(!calYM)calYM=t.slice(0,7);const [Y,M]=calYM.split('-').map(Number);
   const first=`${calYM}-01`;const last=dstr(new Date(Y,M,0));const start=monday(first);const end=addDays(monday(last),6);
   const isCur=calYM===t.slice(0,7);
@@ -2060,11 +2084,12 @@ function renderCal(){const el=document.getElementById('cal');if(!el)return;const
   for(let ds=start;ds<=end;ds=addDays(ds,1)){const E=L.filter(x=>x.d===ds);const inM=ds.slice(0,7)===calYM;
     if(inM)['m','t'].forEach(w=>{const tr=E.filter(x=>x.who===w&&x.t==='train');if(tr.length){nTr[w]++;const v=tr[tr.length-1].var||'home';nV[w][v]=(nV[w][v]||0)+1;}});
     const ic=who=>[...new Set(E.filter(x=>x.who===who).map(actI))].join('');
-    h+=`<button type="button" class="cd${ds===t?' tod':''}${ds>t?' fut':''}${inM?'':' out'}${ds===calSel?' sel':''}" data-d="${ds}"><i>${dparse(ds).getDate()}</i><b class="m">${ic('m')}</b><b class="t">${ic('t')}</b></button>`;}
+    const rk=['m','t'].filter(w=>RD[w].has(ds));
+    h+=`<button type="button" class="cd${ds===t?' tod':''}${ds>t?' fut':''}${inM?'':' out'}${ds===calSel?' sel':''}${rk.length?' rec':''}" data-d="${ds}">${rk.length?`<span class="rk">${rk.map(w=>`<u class="${w}"></u>`).join('')}</span>`:''}<i>${dparse(ds).getDate()}</i><b class="m">${ic('m')}</b><b class="t">${ic('t')}</b></button>`;}
   h+='</div>';
-  el.innerHTML=h+`<p class="mute calsum">${MES[M-1][0].toUpperCase()+MES[M-1].slice(1)}: tréningy – mama ${nTr.m}×${vs(nV.m)}, tato ${nTr.t}×${vs(nV.t)}</p>`+
-    '<div class="leg">'+Object.values(VARI).map(a=>a.i+' '+a.n).join(' · ')+' · '+Object.entries(ACT).filter(([k])=>k!=='train').map(([k,a])=>a.i+' '+a.n).join(' · ')+' · <b class="m">■</b> mama <b class="t">■</b> tato</div><div id="dayList"></div>';
-  if(calSel&&calSel.slice(0,7)===calYM)showDay(calSel);}
+  el.innerHTML='<div class="calL">'+h+`<p class="mute calsum">${MES[M-1][0].toUpperCase()+MES[M-1].slice(1)}: tréningy – mama ${nTr.m}×${vs(nV.m)}, tato ${nTr.t}×${vs(nV.t)}</p>`+
+    '<div class="leg">'+Object.values(VARI).map(a=>a.i+' '+a.n).join(' · ')+' · '+Object.entries(ACT).filter(([k])=>k!=='train').map(([k,a])=>a.i+' '+a.n).join(' · ')+' · <b class="m">■</b> mama <b class="t">■</b> tato · <span class="lgrec">▢</span> odporúčaný deň na tréning (bodka = kto)</div></div><div id="dayList" class="calday"></div>';
+  showDay(calSel);}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-cm]');if(!b)return;const k=+b.dataset.cm;
   if(!k){calYM=today().slice(0,7);calSel=today();}else{const [Y,M]=calYM.split('-').map(Number);const d=new Date(Y,M-1+k,1);calYM=dstr(d).slice(0,7);}
   renderCal();});
@@ -2075,21 +2100,40 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-cm]');if(!
 /* new day (app left open over midnight / reopened next day) → refresh dates */
 let _lastDay=today();
 function dayCheck(){const t=today();if(t===_lastDay)return;const was=_lastDay;_lastDay=t;
-  const q=document.getElementById('qDate');if(q&&(!q.value||q.value===was))q.value=t;
+  if(calSel===was)calSel=t;
   if(calYM===was.slice(0,7))calYM=t.slice(0,7);refreshLog();try{build();}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)dayCheck();});setInterval(dayCheck,60000);
-document.addEventListener('click',e=>{const b=e.target.closest('.cd');if(!b)return;calSel=b.dataset.d;document.querySelectorAll('.cd.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');showDay(b.dataset.d);});
-function showDay(ds){const el=document.getElementById('dayList');if(!el)return;const E=live().filter(x=>x.d===ds);
-  el.innerHTML=`<h4>${fmtD(ds)}</h4>`+(E.length?E.map(x=>`<div class="dl ${x.who}"><span>${actI(x)} <b>${WHO2[x.who]}</b> – ${actN(x)}${x.ex?' · '+Object.keys(x.ex).length+' cvikov':''}${x.pain&&x.pain[x.who]?painTxt(x.pain[x.who]):''}</span><button type="button" data-del="${x.id}">✕</button></div>`).join(''):'<p class="mute">Žiadny záznam.</p>')+
-    `<div class="qadd">Pridať na tento deň: ${qaBtns(ds)}</div>`;}
+document.addEventListener('click',e=>{const b=e.target.closest('.cd');if(!b)return;calSel=b.dataset.d;document.querySelectorAll('.cd.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');showDay(calSel);
+  if(innerWidth<900){const dl=document.getElementById('dayList');dl&&dl.scrollIntoView({behavior:'smooth',block:'nearest'});}});
+function dayHas(w,ds,t,v){return live().find(x=>x.who===w&&x.d===ds&&(t==='train'?x.t==='train'&&(x.var||'home')===v:x.t===t));}
+function dayRec(ds){const t=today();if(ds<t)return '';
+  const per={};['m','t'].forEach(w=>{let L;const tr=live().find(x=>x.who===w&&x.d===ds&&x.t==='train');
+    if(ds===t){const R=RECS[w];L=[...R.lines,`<span class="mute">${R.week}${R.next?' · '+R.next:''} · cyklus: týždeň ${R.wk}/4${R.deload?' (ľahší)':''}</span>`];if(R.lvlUp)L.push(`<b class="up">${R.lvlUp}</b>`);}
+    else if(tr)L=['✅ Tréning naplánovaný.'];
+    else L=[RD[w].has(ds)?'💪 Vhodný deň na tréning.':'😴 Voľno od posilňovania – prechádzka, plávanie, SM systém alebo turistika podľa chuti.'];
+    per[w]=L;});
+  if(per.m.join()===per.t.join())return `<div class="dayrec both"><p><b>Mama aj tato</b></p>${per.m.map(l=>`<p>${l}</p>`).join('')}</div>`;
+  return ['m','t'].map(w=>`<div class="dayrec ${w}"><p><b>${WHO2[w]}</b></p>${per[w].map(l=>`<p>${l}</p>`).join('')}</div>`).join('');}
+function dayBtns(ds){const W=quickWho();const st=(t,v)=>{const n=W.filter(w=>dayHas(w,ds,t,v)).length;return !W.length||!n?'':n===W.length?'on':'part';};
+  return Object.entries(VARI).map(([k,a])=>`<button type="button" class="${st('train',k)}" data-qa="train" data-v="${k}" data-d="${ds}">${a.i} ${a.n}</button>`).join('')+
+    Object.entries(ACT).filter(([k])=>k!=='train').map(([k,a])=>`<button type="button" class="${st(k)}" data-qa="${k}" data-d="${ds}">${a.i} ${a.n}</button>`).join('');}
+function showDay(ds){const el=document.getElementById('dayList');if(!el)return;const E=live().filter(x=>x.d===ds).sort((a,b)=>a.who<b.who?-1:1);const t=today();
+  el.innerHTML=`<h4>${ds===t?'Dnes · ':''}${fmtD(ds)}${ds.slice(0,4)!==t.slice(0,4)?' '+ds.slice(0,4):''}</h4>${dayRec(ds)}`+
+    E.map(x=>`<div class="dl ${x.who}"><span>${actI(x)} <b>${WHO2[x.who]}</b> – ${actN(x)}${x.ex&&Object.keys(x.ex).length?' · '+Object.keys(x.ex).length+' cvikov':''}${x.pain&&x.pain[x.who]?painTxt(x.pain[x.who]):''}</span><button type="button" data-del="${x.id}" aria-label="Zmazať">✕</button></div>`).join('')+
+    `<div class="qadd"><span>${ds>t?'Naplánovať':'Zapísať'} pre: <b>${quickWho().map(w=>WHO2[w]).join(' a ')||'– vyber hore Mama / Tato –'}</b> · ťuknutím zapneš / vypneš</span>${dayBtns(ds)}</div>`;}
 const painTxt=p=>{const n=['bez bolesti','mierna','výrazná'];return ` · chrbát: ${n[p.b||0]}, bedro: ${n[p.h||0]}`;};
-document.addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d){if(confirm('Zmazať tento záznam?')){delEntry(d.dataset.del);dbSave();refreshLog();build();const op=document.querySelector('#dayList h4');}return;}
-  const q=e.target.closest('[data-qa]');if(q){const who=quickWho();if(!who.length){alert('Vyber mamu alebo tatu.');return;}
-    const ds=q.dataset.d||document.getElementById('qDate').value||today();
-    const qv=q.dataset.v||VAR;if(q.dataset.qa==='train'){who.forEach(w=>addEntry({who:w,d:ds,t:'train',var:qv,quick:1}));}else who.forEach(w=>addEntry({who:w,d:ds,t:q.dataset.qa}));
-    dbSave();refreshLog();build();showDay(ds);const qx={t:q.dataset.qa,var:qv};toast(actI(qx)+' Zapísané: '+who.map(w=>WHO2[w]).join(' a ')+' – '+actN(qx)+' ('+fmtD(ds)+')');}});
-function quickWho(){return ['m','t'].filter(w=>{const c=document.getElementById('qw-'+w);return !c||c.checked;});}
-function toast(t){let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';document.body.appendChild(el);}el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2600);}
+function afterChange(){dbSave();refreshLog();try{build();}catch(_){}}
+function undoable(msg,xs){toast(msg,()=>{xs.forEach(x=>{delete x.del;x.u=Date.now();});afterChange();toast('↩ Vrátené');});}
+document.addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d){const x=DB.e.find(y=>y.id===d.dataset.del);if(!x)return;delEntry(x.id);afterChange();undoable(`🗑 Zmazané: ${WHO2[x.who]} – ${actN(x)}`,[x]);return;}
+  const q=e.target.closest('[data-qa]');if(!q)return;const W=quickWho();if(!W.length){toast('Vyber hore, kto: Mama / Tato');return;}
+  const ds=q.dataset.d||calSel||today(),t=q.dataset.qa,v=q.dataset.v||VAR;const qx={t,var:v};
+  if(W.every(w=>dayHas(w,ds,t,v))){const xs=W.map(w=>dayHas(w,ds,t,v));xs.forEach(x=>delEntry(x.id));afterChange();undoable(`${actI(qx)} Zrušené: ${W.map(w=>WHO2[w]).join(' a ')} – ${actN(qx)}`,xs);return;}
+  W.forEach(w=>{if(dayHas(w,ds,t,v))return;if(t==='train'){const o=live().find(x=>x.who===w&&x.d===ds&&x.t==='train');if(o){o.var=v;o.u=Date.now();return;}addEntry({who:w,d:ds,t,var:v,quick:1});}else addEntry({who:w,d:ds,t});});
+  afterChange();toast(`${actI(qx)} Zapísané: ${W.map(w=>WHO2[w]).join(' a ')} – ${actN(qx)} (${fmtD(ds)})`);});
+function quickWho(){return ['m','t'].filter(w=>{const c=document.getElementById('ww-'+w);return !c||c.checked;});}
+document.addEventListener('change',e=>{if(e.target.id==='ww-m'||e.target.id==='ww-t')showDay(calSel||today());});
+function toast(t,undo){let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';document.body.appendChild(el);}el.textContent=t;if(undo){const b=document.createElement('button');b.type='button';b.textContent='Vrátiť';b.onclick=()=>{el.classList.remove('on');undo();};el.appendChild(b);}el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),undo?5000:2600);}
+
 function renderCharts(){const el=document.getElementById('charts');if(!el)return;const all=[...HOME,...GYM,...FIT];const rows=[];
   all.forEach(ex=>{const ser={};['m','t'].forEach(w=>{ser[w]=entries(w).filter(x=>x.t==='train'&&x.ex&&x.ex[ex.id]&&x.ex[ex.id][w]).map(x=>{const s=x.ex[ex.id][w].s||[];const kg=s.map(q=>parseFloat(String(q[1]||'').replace(',','.'))).filter(n=>!isNaN(n));const rp=s.map(q=>parseInt(q[0])).filter(n=>!isNaN(n));return {d:x.d,kg:kg.length?Math.max(...kg):null,rp:rp.length?rp.reduce((a,b)=>a+b,0):0};});});
     if(ser.m.length+ser.t.length>=2)rows.push([ex,ser]);});
@@ -2218,14 +2262,16 @@ function wkFinish(){clearInterval(WK.tid);const sv=document.getElementById('wkVi
 document.addEventListener('click',e=>{if(!e.target.closest('#wkSave'))return;const mins=Math.round((Date.now()-WK.start)/60000);
   WK.who.forEach(w=>{const pain={};pain[w]={b:+(document.querySelector(`input[name=p${w}b]:checked`)||{}).value||0,h:+(document.querySelector(`input[name=p${w}h]:checked`)||{}).value||0};
     const ex={};for(const id in WK.log){if(WK.log[id][w])ex[id]={[w]:WK.log[id][w]};}
+    live().filter(x=>x.who===w&&x.d===WK.d&&x.t==='train').forEach(x=>delEntry(x.id));
     addEntry({who:w,d:WK.d,t:'train',var:WK.var,ex,pain,min:mins});});
   dbSave();wkClose(false);refreshLog();build();toast('💾 Tréning uložený ('+mins+' min)');
-  document.getElementById('dennik').scrollIntoView({behavior:'smooth'});});
+  calSel=WK.d;showTab('cal');});
 
 /* boot */
 try{pullCfg();}catch(e){}
-(function(){const q=document.getElementById('qDate');if(q)q.value=today();})();
-(function(){const q=document.getElementById('qbtns');if(q)q.innerHTML=qaBtns();})();
+function showTab(t){document.querySelectorAll('section.tab').forEach(x=>x.hidden=x.id!=='tab-'+t);document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));document.body.dataset.tab=t;window.scrollTo(0,0);if(t==='cal')renderCal();}
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)showTab(b.dataset.tab);});
+document.body.dataset.tab='cal';
 renderSync();refreshLog();start();syncSoon(400);
 if('serviceWorker' in navigator&&location.protocol==='https:'&&/github\.io$/.test(location.hostname)){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 

@@ -143,13 +143,23 @@ doseHTML=function(ex,who){if(ex.both)return null;const D=doseOf(ex,who);
   return `<div class="${who}"><b>${WHO[who]}</b><span class="sets">${D.sets?`${D.sets} ${seriesWord(D.sets)} × ${D.reps}`:D.reps}</span>${extra?`<small>${extra}</small>`:''}${D.why&&D.why.length?`<small class="adj">↓ ${D.why.join(', ')}</small>`:''}${ph?`<small class="prog">${ph}</small>`:''}</div>`;};
 
 /* ---------- Today panel, diary, calendar, charts ---------- */
-function refreshLog(){RECS={m:recFor('m'),t:recFor('t')};renderToday();renderCal();renderCharts();renderPlan();}
-function renderToday(){const el=document.getElementById('today');if(!el)return;
-  el.innerHTML=['m','t'].map(w=>{const R=RECS[w];return `<div class="tdy ${w}"><h4>${WHO2[w]} <span class="st ${R.status}">${{go:'tréning',rest:'voľno',done:'hotovo'}[R.status]}</span></h4>${R.lines.map(l=>`<p>${l}</p>`).join('')}<p class="mute">${R.week}${R.next?' · '+R.next:''}</p><p class="mute">Cyklus: týždeň ${R.wk} zo 4${R.deload?' (ľahší týždeň)':''}</p>${R.lvlUp?`<p class="up">${R.lvlUp}</p>`:''}</div>`;}).join('');}
+function dedupe(){const keep=new Map();let ch=false;
+  live().forEach(x=>{const k=x.who+'|'+x.d+'|'+x.t;const o=keep.get(k);if(!o){keep.set(k,x);return;}
+    const sc=y=>(y.ex?1e6+Object.keys(y.ex).length:0)+(y.u||0)/1e13;const [win,lose]=sc(x)>sc(o)?[x,o]:[o,x];keep.set(k,win);delEntry(lose.id);ch=true;});
+  if(ch)dbSave();return ch;}
+function refreshLog(){dedupe();RECS={m:recFor('m'),t:recFor('t')};renderToday();renderCal();renderCharts();renderPlan();}
+function renderToday(){const el=document.getElementById('tdDate');if(el)el.textContent=fmtD(today());}
+/* projected recommended training days (1 rest day between, max 3 per week) */
+function recDays(w){const t=today();const tr=entries(w).filter(x=>x.t==='train').map(x=>x.d);const set=new Set(tr);
+  let last=tr.filter(d=>d<t).pop();const out=new Set();const wc={};tr.forEach(d=>{const m=monday(d);wc[m]=(wc[m]||0)+1;});
+  for(let k=0;k<42;k++){const d=addDays(t,k);if(set.has(d)){last=d;continue;}const m=monday(d);
+    if((!last||daysBetween(last,d)>=2)&&(wc[m]||0)<3){out.add(d);last=d;wc[m]=(wc[m]||0)+1;}}
+  return out;}
+let RD={m:new Set(),t:new Set()};
 const MES=['január','február','marec','apríl','máj','jún','júl','august','september','október','november','december'];
 let calYM=null,calSel=null;
 function vs(o){const k=Object.keys(VARI).filter(v=>o[v]);return k.length?' ('+k.map(v=>VARI[v].i+o[v]).join(' ')+')':'';}
-function renderCal(){const el=document.getElementById('cal');if(!el)return;const t=today();
+function renderCal(){const el=document.getElementById('cal');if(!el)return;const t=today();RD={m:recDays('m'),t:recDays('t')};if(!calSel)calSel=t;
   if(!calYM)calYM=t.slice(0,7);const [Y,M]=calYM.split('-').map(Number);
   const first=`${calYM}-01`;const last=dstr(new Date(Y,M,0));const start=monday(first);const end=addDays(monday(last),6);
   const isCur=calYM===t.slice(0,7);
@@ -160,11 +170,12 @@ function renderCal(){const el=document.getElementById('cal');if(!el)return;const
   for(let ds=start;ds<=end;ds=addDays(ds,1)){const E=L.filter(x=>x.d===ds);const inM=ds.slice(0,7)===calYM;
     if(inM)['m','t'].forEach(w=>{const tr=E.filter(x=>x.who===w&&x.t==='train');if(tr.length){nTr[w]++;const v=tr[tr.length-1].var||'home';nV[w][v]=(nV[w][v]||0)+1;}});
     const ic=who=>[...new Set(E.filter(x=>x.who===who).map(actI))].join('');
-    h+=`<button type="button" class="cd${ds===t?' tod':''}${ds>t?' fut':''}${inM?'':' out'}${ds===calSel?' sel':''}" data-d="${ds}"><i>${dparse(ds).getDate()}</i><b class="m">${ic('m')}</b><b class="t">${ic('t')}</b></button>`;}
+    const rk=['m','t'].filter(w=>RD[w].has(ds));
+    h+=`<button type="button" class="cd${ds===t?' tod':''}${ds>t?' fut':''}${inM?'':' out'}${ds===calSel?' sel':''}${rk.length?' rec':''}" data-d="${ds}">${rk.length?`<span class="rk">${rk.map(w=>`<u class="${w}"></u>`).join('')}</span>`:''}<i>${dparse(ds).getDate()}</i><b class="m">${ic('m')}</b><b class="t">${ic('t')}</b></button>`;}
   h+='</div>';
-  el.innerHTML=h+`<p class="mute calsum">${MES[M-1][0].toUpperCase()+MES[M-1].slice(1)}: tréningy – mama ${nTr.m}×${vs(nV.m)}, tato ${nTr.t}×${vs(nV.t)}</p>`+
-    '<div class="leg">'+Object.values(VARI).map(a=>a.i+' '+a.n).join(' · ')+' · '+Object.entries(ACT).filter(([k])=>k!=='train').map(([k,a])=>a.i+' '+a.n).join(' · ')+' · <b class="m">■</b> mama <b class="t">■</b> tato</div><div id="dayList"></div>';
-  if(calSel&&calSel.slice(0,7)===calYM)showDay(calSel);}
+  el.innerHTML='<div class="calL">'+h+`<p class="mute calsum">${MES[M-1][0].toUpperCase()+MES[M-1].slice(1)}: tréningy – mama ${nTr.m}×${vs(nV.m)}, tato ${nTr.t}×${vs(nV.t)}</p>`+
+    '<div class="leg">'+Object.values(VARI).map(a=>a.i+' '+a.n).join(' · ')+' · '+Object.entries(ACT).filter(([k])=>k!=='train').map(([k,a])=>a.i+' '+a.n).join(' · ')+' · <b class="m">■</b> mama <b class="t">■</b> tato · <span class="lgrec">▢</span> odporúčaný deň na tréning (bodka = kto)</div></div><div id="dayList" class="calday"></div>';
+  showDay(calSel);}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-cm]');if(!b)return;const k=+b.dataset.cm;
   if(!k){calYM=today().slice(0,7);calSel=today();}else{const [Y,M]=calYM.split('-').map(Number);const d=new Date(Y,M-1+k,1);calYM=dstr(d).slice(0,7);}
   renderCal();});
@@ -175,21 +186,40 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-cm]');if(!
 /* new day (app left open over midnight / reopened next day) → refresh dates */
 let _lastDay=today();
 function dayCheck(){const t=today();if(t===_lastDay)return;const was=_lastDay;_lastDay=t;
-  const q=document.getElementById('qDate');if(q&&(!q.value||q.value===was))q.value=t;
+  if(calSel===was)calSel=t;
   if(calYM===was.slice(0,7))calYM=t.slice(0,7);refreshLog();try{build();}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)dayCheck();});setInterval(dayCheck,60000);
-document.addEventListener('click',e=>{const b=e.target.closest('.cd');if(!b)return;calSel=b.dataset.d;document.querySelectorAll('.cd.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');showDay(b.dataset.d);});
-function showDay(ds){const el=document.getElementById('dayList');if(!el)return;const E=live().filter(x=>x.d===ds);
-  el.innerHTML=`<h4>${fmtD(ds)}</h4>`+(E.length?E.map(x=>`<div class="dl ${x.who}"><span>${actI(x)} <b>${WHO2[x.who]}</b> – ${actN(x)}${x.ex?' · '+Object.keys(x.ex).length+' cvikov':''}${x.pain&&x.pain[x.who]?painTxt(x.pain[x.who]):''}</span><button type="button" data-del="${x.id}">✕</button></div>`).join(''):'<p class="mute">Žiadny záznam.</p>')+
-    `<div class="qadd">Pridať na tento deň: ${qaBtns(ds)}</div>`;}
+document.addEventListener('click',e=>{const b=e.target.closest('.cd');if(!b)return;calSel=b.dataset.d;document.querySelectorAll('.cd.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');showDay(calSel);
+  if(innerWidth<900){const dl=document.getElementById('dayList');dl&&dl.scrollIntoView({behavior:'smooth',block:'nearest'});}});
+function dayHas(w,ds,t,v){return live().find(x=>x.who===w&&x.d===ds&&(t==='train'?x.t==='train'&&(x.var||'home')===v:x.t===t));}
+function dayRec(ds){const t=today();if(ds<t)return '';
+  const per={};['m','t'].forEach(w=>{let L;const tr=live().find(x=>x.who===w&&x.d===ds&&x.t==='train');
+    if(ds===t){const R=RECS[w];L=[...R.lines,`<span class="mute">${R.week}${R.next?' · '+R.next:''} · cyklus: týždeň ${R.wk}/4${R.deload?' (ľahší)':''}</span>`];if(R.lvlUp)L.push(`<b class="up">${R.lvlUp}</b>`);}
+    else if(tr)L=['✅ Tréning naplánovaný.'];
+    else L=[RD[w].has(ds)?'💪 Vhodný deň na tréning.':'😴 Voľno od posilňovania – prechádzka, plávanie, SM systém alebo turistika podľa chuti.'];
+    per[w]=L;});
+  if(per.m.join()===per.t.join())return `<div class="dayrec both"><p><b>Mama aj tato</b></p>${per.m.map(l=>`<p>${l}</p>`).join('')}</div>`;
+  return ['m','t'].map(w=>`<div class="dayrec ${w}"><p><b>${WHO2[w]}</b></p>${per[w].map(l=>`<p>${l}</p>`).join('')}</div>`).join('');}
+function dayBtns(ds){const W=quickWho();const st=(t,v)=>{const n=W.filter(w=>dayHas(w,ds,t,v)).length;return !W.length||!n?'':n===W.length?'on':'part';};
+  return Object.entries(VARI).map(([k,a])=>`<button type="button" class="${st('train',k)}" data-qa="train" data-v="${k}" data-d="${ds}">${a.i} ${a.n}</button>`).join('')+
+    Object.entries(ACT).filter(([k])=>k!=='train').map(([k,a])=>`<button type="button" class="${st(k)}" data-qa="${k}" data-d="${ds}">${a.i} ${a.n}</button>`).join('');}
+function showDay(ds){const el=document.getElementById('dayList');if(!el)return;const E=live().filter(x=>x.d===ds).sort((a,b)=>a.who<b.who?-1:1);const t=today();
+  el.innerHTML=`<h4>${ds===t?'Dnes · ':''}${fmtD(ds)}${ds.slice(0,4)!==t.slice(0,4)?' '+ds.slice(0,4):''}</h4>${dayRec(ds)}`+
+    E.map(x=>`<div class="dl ${x.who}"><span>${actI(x)} <b>${WHO2[x.who]}</b> – ${actN(x)}${x.ex&&Object.keys(x.ex).length?' · '+Object.keys(x.ex).length+' cvikov':''}${x.pain&&x.pain[x.who]?painTxt(x.pain[x.who]):''}</span><button type="button" data-del="${x.id}" aria-label="Zmazať">✕</button></div>`).join('')+
+    `<div class="qadd"><span>${ds>t?'Naplánovať':'Zapísať'} pre: <b>${quickWho().map(w=>WHO2[w]).join(' a ')||'– vyber hore Mama / Tato –'}</b> · ťuknutím zapneš / vypneš</span>${dayBtns(ds)}</div>`;}
 const painTxt=p=>{const n=['bez bolesti','mierna','výrazná'];return ` · chrbát: ${n[p.b||0]}, bedro: ${n[p.h||0]}`;};
-document.addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d){if(confirm('Zmazať tento záznam?')){delEntry(d.dataset.del);dbSave();refreshLog();build();const op=document.querySelector('#dayList h4');}return;}
-  const q=e.target.closest('[data-qa]');if(q){const who=quickWho();if(!who.length){alert('Vyber mamu alebo tatu.');return;}
-    const ds=q.dataset.d||document.getElementById('qDate').value||today();
-    const qv=q.dataset.v||VAR;if(q.dataset.qa==='train'){who.forEach(w=>addEntry({who:w,d:ds,t:'train',var:qv,quick:1}));}else who.forEach(w=>addEntry({who:w,d:ds,t:q.dataset.qa}));
-    dbSave();refreshLog();build();showDay(ds);const qx={t:q.dataset.qa,var:qv};toast(actI(qx)+' Zapísané: '+who.map(w=>WHO2[w]).join(' a ')+' – '+actN(qx)+' ('+fmtD(ds)+')');}});
-function quickWho(){return ['m','t'].filter(w=>{const c=document.getElementById('qw-'+w);return !c||c.checked;});}
-function toast(t){let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';document.body.appendChild(el);}el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2600);}
+function afterChange(){dbSave();refreshLog();try{build();}catch(_){}}
+function undoable(msg,xs){toast(msg,()=>{xs.forEach(x=>{delete x.del;x.u=Date.now();});afterChange();toast('↩ Vrátené');});}
+document.addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d){const x=DB.e.find(y=>y.id===d.dataset.del);if(!x)return;delEntry(x.id);afterChange();undoable(`🗑 Zmazané: ${WHO2[x.who]} – ${actN(x)}`,[x]);return;}
+  const q=e.target.closest('[data-qa]');if(!q)return;const W=quickWho();if(!W.length){toast('Vyber hore, kto: Mama / Tato');return;}
+  const ds=q.dataset.d||calSel||today(),t=q.dataset.qa,v=q.dataset.v||VAR;const qx={t,var:v};
+  if(W.every(w=>dayHas(w,ds,t,v))){const xs=W.map(w=>dayHas(w,ds,t,v));xs.forEach(x=>delEntry(x.id));afterChange();undoable(`${actI(qx)} Zrušené: ${W.map(w=>WHO2[w]).join(' a ')} – ${actN(qx)}`,xs);return;}
+  W.forEach(w=>{if(dayHas(w,ds,t,v))return;if(t==='train'){const o=live().find(x=>x.who===w&&x.d===ds&&x.t==='train');if(o){o.var=v;o.u=Date.now();return;}addEntry({who:w,d:ds,t,var:v,quick:1});}else addEntry({who:w,d:ds,t});});
+  afterChange();toast(`${actI(qx)} Zapísané: ${W.map(w=>WHO2[w]).join(' a ')} – ${actN(qx)} (${fmtD(ds)})`);});
+function quickWho(){return ['m','t'].filter(w=>{const c=document.getElementById('ww-'+w);return !c||c.checked;});}
+document.addEventListener('change',e=>{if(e.target.id==='ww-m'||e.target.id==='ww-t')showDay(calSel||today());});
+function toast(t,undo){let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';document.body.appendChild(el);}el.textContent=t;if(undo){const b=document.createElement('button');b.type='button';b.textContent='Vrátiť';b.onclick=()=>{el.classList.remove('on');undo();};el.appendChild(b);}el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),undo?5000:2600);}
+
 function renderCharts(){const el=document.getElementById('charts');if(!el)return;const all=[...HOME,...GYM,...FIT];const rows=[];
   all.forEach(ex=>{const ser={};['m','t'].forEach(w=>{ser[w]=entries(w).filter(x=>x.t==='train'&&x.ex&&x.ex[ex.id]&&x.ex[ex.id][w]).map(x=>{const s=x.ex[ex.id][w].s||[];const kg=s.map(q=>parseFloat(String(q[1]||'').replace(',','.'))).filter(n=>!isNaN(n));const rp=s.map(q=>parseInt(q[0])).filter(n=>!isNaN(n));return {d:x.d,kg:kg.length?Math.max(...kg):null,rp:rp.length?rp.reduce((a,b)=>a+b,0):0};});});
     if(ser.m.length+ser.t.length>=2)rows.push([ex,ser]);});

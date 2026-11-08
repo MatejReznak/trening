@@ -60,7 +60,7 @@ function bindRotate(v){
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('.v3'))VIEWS.forEach(v=>{if(v.active)setActive(v,false);});});
 function buildView(v){
   const A=AV[v.who];const variant=v.ex.v[v.vi];let an;if(v.bad&&BAD[v.ex.id]){const raw=variant.anim(A.L);raw._L=A.L;badMod(BAD[v.ex.id][0])(raw);an=normalizeAnim(raw,A.L);}else an=animFor(variant.anim,A.L);v.an=an;
-  const sc=makeScene();const bb=buildProps(sc,an.props);const inst=makeAvatarInstance(v.who,sc);const D=buildDyn(sc,inst,an.dyn,an.props);
+  const sc=makeScene();const env=GYM.includes(v.ex)?'gym':FIT.includes(v.ex)?'fit':HOME.includes(v.ex)?'home':VAR;const bb=buildProps(sc,an.props,{env});const inst=makeAvatarInstance(v.who,sc);const D=buildDyn(sc,inst,an.dyn,an.props);
   v.opt={hand:an.hand,curl:an.curl,side:an.side,ground:an.ground,footFloor:an.footFloor,footRelax:an.footRelax,footN:an.footN,footOff:an.footOff};
   const box=bb.clone();
   an.k.forEach(p=>{poseInstance(inst,p,v.opt);updateDyn(D,inst);inst.bones.forEach(b=>box.expandByPoint(b.position));[].concat(...Object.values(D.objs||{})).forEach(o=>{if(o&&o.isObject3D)box.expandByObject(o);});});

@@ -36,6 +36,8 @@ function propMats(){if(PMAT)return PMAT;
     belt:S(0x1b1d20,.85,0,{normalMap:NRM.rubber()}),deck:S(0x4a5058,.45,.5),screen:S(0x0d1620,.15,.3),
     gymF:S(0xffffff,.92,0,{map:MAPS.rubber(),normalMap:NRM.rubber(),alphaMap:MAPS.radial(),transparent:true}),
     homeF:S(0xd2cec8,.62,0,{map:MAPS.floorWood(),alphaMap:MAPS.radial(),transparent:true}),
+    fitF:S(0xb8c0c8,.9,0,{map:MAPS.rubber(),normalMap:NRM.rubber(),alphaMap:MAPS.radial(),transparent:true}),
+    leaf:S(0x4f8a4a,.7,0,{side:THREE.DoubleSide}),pot:S(0xd8cdbd,.6),kb:S(0x222428,.45,.3),plate:S(0x1c1e21,.5,.2),plateR:S(0xc0392b,.5,.1),cushion:S(0xb7c6c2,.95),sofa:S(0xcfc2b0,.9),
     rubberC:S(0x111214,.8),silver:S(0xc5ccd3,.3,.85)};
   return PMAT;}
 /* rounded box geometry with smooth normals */
@@ -51,12 +53,35 @@ function rbGeo(w,h,d,r){r=Math.max(0.0008,Math.min(r,w/2-1e-4,h/2-1e-4,d/2-1e-4)
 function pbox(sc,mat,x0,x1,y0,y1,z0,z1,rr){const w=x1-x0,h=y1-y0,d=z1-z0;const m=new THREE.Mesh(rbGeo(w,h,d,rr!=null?rr:Math.min(0.012,Math.min(w,h,d)*0.22)),mat);m.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);m.castShadow=true;m.receiveShadow=true;sc.add(m);return m;}
 function rbox(sc,mat,x0,x1,y0,y1,z0,z1,r){ // rounded pad via scaled box + edge cylinders (simple)
   return pbox(sc,mat,x0,x1,y0,y1,z0,z1);}
+/* background decor by place: home living room, home gym, fitness centre */
+function decor(sc,env,isGym){const M=propMats();const g=new THREE.Group();g.userData.decor=true;
+  const cyl=(r0,r1,h,m,x,y,z,seg)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r0,r1,h,seg||20),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o;};
+  const box=(m,x0,x1,y0,y1,z0,z1,r)=>{const o=new THREE.Mesh(rbGeo(x1-x0,y1-y0,z1-z0,r!=null?r:0.012),m);o.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);o.castShadow=true;o.receiveShadow=true;g.add(o);return o;};
+  if(env==='home'){ // potted plant + low sofa far behind
+    const px=-1.55,pz=-1.35;cyl(0.13,0.1,0.28,M.pot,px,0.14,pz);
+    for(let i=0;i<14;i++){const a=i/14*Math.PI*2+Math.random()*0.3,L=0.35+Math.random()*0.25,el=0.9+Math.random()*0.5;const lf=new THREE.Mesh(new THREE.SphereGeometry(1,10,6),M.leaf);
+      lf.scale.set(0.05,L*0.5,0.018);lf.position.set(px+Math.cos(a)*0.08,0.28+Math.sin(el)*L*0.45,pz+Math.sin(a)*0.08);lf.rotation.set(Math.cos(a)*(1.5-el),a,Math.sin(a)*(1.5-el)*-1);lf.castShadow=true;g.add(lf);}
+    box(M.sofa,0.2,1.9,0.0,0.42,-2.25,-1.6,0.06);box(M.sofa,0.2,1.9,0.42,0.82,-2.25,-2.05,0.06);box(M.sofa,0.15,0.35,0.0,0.6,-2.25,-1.6,0.06);box(M.sofa,1.75,1.95,0.0,0.6,-2.25,-1.6,0.06);
+    box(M.cushion,0.5,0.85,0.42,0.72,-2.05,-1.95,0.05);
+  }else if(env==='gym'){ // dumbbell rack + plate tree
+    const z=-2.15;box(M.frameD,-1.9,-0.3,0.0,0.05,z-0.2,z+0.2,0.01);[-1.85,-0.35].forEach(x=>box(M.frameD,x-0.03,x+0.03,0.0,0.72,z-0.03,z+0.03,0.008));
+    box(M.frameD,-1.9,-0.3,0.66,0.7,z-0.16,z+0.16,0.008);box(M.frameD,-1.9,-0.3,0.36,0.4,z-0.16,z+0.16,0.008);
+    for(let i=0;i<6;i++){const d=makeDumbbell(sc,i>3?14:6);sc.remove(d);d.rotation.set(0,Math.PI/2,Math.PI/2);d.position.set(-1.7+i*0.25,i%2?0.46:0.76,z);d.scale.setScalar(0.92);g.add(d);}
+    const tx=1.3,tz=-2.0;cyl(0.02,0.02,0.9,M.frameD,tx,0.45,tz,12);cyl(0.22,0.22,0.03,M.frameD,tx,0.015,tz);
+    [[0.22,0.28,M.plate],[0.22,0.55,M.plate],[0.17,0.78,M.plateR]].forEach(([r,y,m])=>{const p=cyl(r,r,0.04,m,tx+0.06,y,tz,28);p.rotation.z=Math.PI/2;});
+  }else{ // fitness: kettlebell row + mirror strip
+    const z=-1.6;for(let i=0;i<5;i++){const x=-1.6+i*0.3,r=0.07+i*0.012;const b=new THREE.Mesh(new THREE.SphereGeometry(r,18,14),M.kb);b.position.set(x,r,z);b.castShadow=true;g.add(b);
+      const h=new THREE.Mesh(new THREE.TorusGeometry(r*0.7,r*0.16,8,20,Math.PI),M.kb);h.position.set(x,r*1.75,z);h.castShadow=true;g.add(h);}
+    if(!isGym){box(M.frameD,0.4,1.9,0.0,0.06,-2.3,-2.25,0.005);const mir=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.4),new THREE.MeshStandardMaterial({color:0xdfe7ee,roughness:0.08,metalness:0.9,envMapIntensity:1.2}));mir.position.set(1.15,0.76,-2.26);g.add(mir);}
+  }
+  sc.add(g);}
 function buildProps(sc,props,opts){
   const M=propMats();const bb=new THREE.Box3();
   const add=o=>{bb.expandByObject(o);return o;};
-  const isGym=(props||[]).some(x=>MACH[x[0]]);
-  const fl=new THREE.Mesh(new THREE.PlaneGeometry(5.2,5.2),isGym?M.gymF:M.homeF);fl.rotation.x=-Math.PI/2;fl.position.y=0.0005;fl.receiveShadow=true;fl.renderOrder=-1;fl.material.depthWrite=false;sc.add(fl);
+  const isGym=(props||[]).some(x=>MACH[x[0]]);const env=(opts&&opts.env)||(isGym?'fit':'home');
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(5.2,5.2),env==='home'?M.homeF:env==='gym'?M.gymF:M.fitF);fl.rotation.x=-Math.PI/2;fl.position.y=0.0005;fl.receiveShadow=true;fl.renderOrder=-1;fl.material.depthWrite=false;sc.add(fl);
   if((!opts||opts.mat!==false)&&!isGym) pbox(sc,M.mat,-0.95,0.95,0.001,0.011,-0.33,0.33,0.005);
+  if(!opts||opts.decor!==false)decor(sc,env,isGym);
   for(const [type,p] of (props||[])){
     if(type==='chair'||type==='chair2'||type==='chairF'){
       const x0=X3(p.x0),x1=X3(p.x1),top=Y3(p.top),z=0.22;

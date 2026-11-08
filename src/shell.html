@@ -168,12 +168,58 @@ body:not([data-tab=ex]) .controls{display:none}body:not([data-tab=cal]) .wrap>h1
 .cd.rec{border-style:dashed;border-color:#2f7a3a;background:#f4faf3}.cd.fut.rec{opacity:1}.lgrec{color:#2f7a3a;font-weight:800}.tdd{font-size:.95rem;color:var(--mute);font-weight:600}
 @media(min-width:900px){.cal{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}.calday{border-top:0;margin-top:0;padding-top:0}}
 #toast button{font:inherit;font-weight:800;margin-left:12px;background:#fff;color:#111;border:0;border-radius:99px;padding:4px 12px;cursor:pointer}
+.prow{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:8px 0}.syncbox .prow label{display:inline-flex!important;flex-direction:row!important;align-items:center;gap:6px;margin:0}.prow input[type=checkbox]{width:20px;height:20px}.prow select{font:inherit;padding:6px 8px;border-radius:8px}
+.bodybox{display:grid;gap:12px}@media(min-width:900px){.bodybox{grid-template-columns:1fr 1fr}.bodybox>p{grid-column:1/-1}}
+.bodyc{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 14px}.bodyc.m{border-top:5px solid var(--mama)}.bodyc.t{border-top:5px solid var(--tato)}
+.bch{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.bch b{font-size:1.1rem}.due{font-size:.82rem;color:#9a6a00;font-weight:700}
+.bin{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:8px 0}.bin label{display:flex;flex-direction:column;font-size:.78rem;color:var(--mute)}.bin input{font:inherit;font-size:1.05rem;width:110px;padding:8px;border:1px solid var(--line);border-radius:10px}
+.bsave{font:inherit;font-weight:800;padding:10px 14px;border:0;border-radius:12px;background:#2f7a3a;color:#fff;cursor:pointer}
+.bgr{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bgr small{font-weight:700;color:var(--mute)}.spk{width:100%;height:auto;display:block}.spkt{font:700 12px Nunito,system-ui,sans-serif;fill:var(--ink)}
+.bd{font-weight:800;margin-left:4px}.bd.good{color:#2f7a3a}.bd.up{color:#b0602b}
+#cele{position:fixed;inset:0;z-index:70;background:rgba(31,35,40,.55);display:flex;align-items:center;justify-content:center;padding:16px}#cele[hidden]{display:none}
+#cele canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.celc{position:relative;background:#fff;border-radius:22px;padding:22px 22px 18px;max-width:520px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow:auto}
+.celbig{font-size:3.4rem;line-height:1}.celc h2{margin:.2em 0 0;font-size:1.8rem}
+.celp{text-align:left;border-radius:14px;padding:10px 12px;margin:10px 0}.celp.m{background:var(--mama-bg)}.celp.t{background:var(--tato-bg)}
+.celn{display:flex;gap:8px;margin-top:6px}.celn span{flex:1;background:#fff;border-radius:10px;padding:6px;text-align:center;font-size:.78rem;color:var(--mute)}.celn i{display:block;font-style:normal;font-size:1.5rem;font-weight:800;color:var(--ink)}
+.celpr{margin:8px 0 0;font-size:.92rem}.celc .big{width:100%;margin-top:8px}
+.weekbox{margin:10px 0 4px}.wkh2{font-weight:800;font-size:.95rem;color:var(--mute);margin-bottom:6px}.wkrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wkp2{display:flex;gap:10px;align-items:center;border-radius:14px;padding:8px 10px}.wkp2.m{background:var(--mama-bg)}.wkp2.t{background:var(--tato-bg)}.wkp2 p{margin:2px 0;font-size:.88rem}.wkp2 .oth{font-size:1.05rem;letter-spacing:2px}
+.ring{width:58px;height:58px;flex:none}.ring text{font:800 15px Nunito,system-ui,sans-serif;fill:var(--ink)}
+@media(max-width:520px){.wkrow{grid-template-columns:1fr}}
+
+/* ===== vzhľad v2 ===== */
+body{background:linear-gradient(180deg,#f8f4ec 0,#f3efe7 420px,#f6f3ee 100%)}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 0 10px}.hero h1{font-size:1.75rem;margin:0}.hero .sub{margin:2px 0 0}
+.hero .sb{font-size:1.4rem;background:#fff;border:1px solid var(--line);border-radius:99px;width:46px;height:46px;display:grid;place-items:center;flex:none}
+.todaybox,.cal,.box,.bodyc,.syncbox,.chart{box-shadow:0 1px 2px rgba(60,40,10,.05),0 6px 20px rgba(60,40,10,.06)}
+.todaybox{border-radius:22px;padding:16px 18px}.cal{border-radius:22px;padding:14px 16px}
+.tdgrid{display:grid;gap:14px}@media(min-width:900px){.tdgrid{grid-template-columns:1.1fr 1fr;align-items:center}.weekbox{margin:0}}
+.tdact .gobox{margin-top:10px}.tdact .big{flex:1;min-width:180px}
+.big{box-shadow:0 2px 0 rgba(0,0,0,.08);transition:transform .08s}.big:active{transform:scale(.98)}
+.big.go{background:linear-gradient(180deg,#3a8d45,#2f7a3a)}
+.seg button{border-radius:14px}
+.cd{border-radius:12px;min-height:58px;transition:background .15s}.cd i{font-size:.8rem;font-weight:700}
+.cd.tod i{font-size:.85rem}
+.calnav b{font-size:1.25rem}.cnb{border-radius:12px}
+.calday h4{font-size:1.15rem}.dayrec{border-radius:14px;padding:10px 12px}
+.dl{border-radius:12px;padding:8px 10px;font-size:.95rem}
+.qadd button{padding:10px 14px}
+h2{letter-spacing:-.01em}
+@media(min-width:900px){
+  html,body{font-size:18px}
+  .wrap{padding:22px 28px 130px}
+  .cd{min-height:72px}.cd b{font-size:.95rem}
+  .qadd button{font-size:1rem;padding:11px 16px}
+}
+.charts{display:grid;gap:12px}@media(min-width:900px){.charts{grid-template-columns:1fr 1fr}}
+.chart{border-radius:16px;padding:10px 14px}.chart svg{width:100%;height:auto!important;display:block}.chh{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.chh small{color:var(--mute)}.axt{font:600 10px Nunito,system-ui,sans-serif;fill:#8a919c}.chd{display:flex;gap:12px;font-size:.85rem}
+.stats{display:grid;gap:12px;margin-bottom:12px}@media(min-width:900px){.stats{grid-template-columns:1fr 1fr}}.stat{border-radius:16px;padding:10px 12px}.stat.m{background:var(--mama-bg)}.stat.t{background:var(--tato-bg)}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>Tréningový plán pre mamu a tatu</h1>
-<p class="sub">Pohyblivosť, sila, zdravý chrbát a kondícia · 3× týždenne · cvičíte spolu, každý na svojej úrovni (<span class="pill pm">Mama</span> <span class="pill pt">Tato</span>).</p>
+<header class="hero"><div><h1 id="hello">Dobrý deň! 👋</h1><p class="sub" id="helloSub">Tréningový plán pre mamu a tatu</p></div><span id="syncBadge" class="sb" title="">📱</span></header>
 
 <div class="controls">
   <div class="seg" id="segVar"><button data-v="home" class="on">🏠 Doma</button><button data-v="gym">🏋️ Domáca posilňovňa</button><button data-v="fit">🏢 Fitnes&shy;centrum</button></div>
@@ -185,11 +231,12 @@ body:not([data-tab=ex]) .controls{display:none}body:not([data-tab=cal]) .wrap>h1
 
 <section class="tab" id="tab-cal">
 <div class="todaybox" id="todayBox">
-  <div class="tdhead"><h2 style="margin:0">📅 Dnes <span id="tdDate" class="tdd"></span></h2><span id="syncBadge" class="sb" title="">📱</span></div>
+  <div class="tdhead"><h2 style="margin:0">📅 Dnes <span id="tdDate" class="tdd"></span></h2></div>
   <div class="today" id="today"></div>
+  <div class="tdgrid"><div id="weekBox" class="weekbox"></div><div class="tdact">
   <div class="seg" id="segVar2"><button data-v="home">🏠 Doma</button><button data-v="gym">🏋️ Domáca posilňovňa</button><button data-v="fit">🏢 Fitnes&shy;centrum</button></div>
   <div class="gobox"><span>Kto:</span><label><input type="checkbox" id="ww-m" checked> Mama</label><label><input type="checkbox" id="ww-t" checked> Tato</label>
-    <button type="button" class="big go" id="wkGo">▶ Cvičíme</button></div>
+    <button type="button" class="big go" id="wkGo">▶ Cvičíme</button><button type="button" class="big" id="wkShort" title="2 min rozcvička, 4 cviky × 2 série, 2 min strečing">⚡ Krátky tréning 15 min</button></div></div></div>
 </div>
 <div class="cal" id="cal"></div>
 </section>
@@ -220,6 +267,7 @@ body:not([data-tab=ex]) .controls{display:none}body:not([data-tab=cal]) .wrap>h1
 
 </section>
 <section class="tab" id="tab-prog" hidden>
+<h2>⚖️ Váha a obvod pása</h2><div id="bodyBox" class="bodybox"></div>
 <h2>📈 Pokrok</h2><div id="charts"></div>
 <h2>🗓 Plán na 4 týždne</h2><div id="plan4"></div>
 </section>
@@ -259,6 +307,7 @@ body:not([data-tab=ex]) .controls{display:none}body:not([data-tab=cal]) .wrap>h1
   <li>🔴 <b>5 a viac</b>, ostrá alebo vystreľujúca bolesť, tŕpnutie, závrat, tlak na hrudi – <b>prestaňte</b> a poraďte sa s lekárom.</li></ul>
   <p>Pri platničke, bedrovom kĺbe, vysokom tlaku či inej diagnóze ukážte plán najprv lekárovi alebo fyzioterapeutovi.</p></div>
 
+<h2>🔔 Pripomienky</h2><div class="syncbox" id="pushBox"></div>
 <h2>☁ Ukladanie a záloha</h2><div class="syncbox" id="syncBox"></div>
 <p class="foot">3D postavy sú vytvorené z voľne použiteľných (CC0) modelov MakeHuman, upravené podľa fotiek. Odkazy na videá sú navyše (v angličtine). Plán je všeobecný a nenahrádza radu lekára ani fyzioterapeuta.</p>
 </section>

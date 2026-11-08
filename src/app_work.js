@@ -11,12 +11,15 @@ const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}};
 const sk=n=>n===1?'sekunda':n>=2&&n<=4?'sekundy':'sekúnd';
 function secsOf(r){const m=String(r||'').match(/(\d+)\s*s\b/);if(m)return +m[1];const mm=String(r||'').match(/(\d+)\s*min/);return mm?+mm[1]*60:0;}
 
-function wkStart(){audioInit();const who=['m','t'].filter(w=>document.getElementById('ww-'+w).checked);if(!who.length){alert('Vyber, kto cvičí.');return;}
-  const steps=[];WARM.forEach(ex=>steps.push({ex,part:'warm'}));MAINL().forEach(ex=>steps.push({ex,part:'main'}));COOL.forEach(ex=>steps.push({ex,part:'cool'}));
-  Object.assign(WK,{on:true,who,steps,i:0,log:{},start:Date.now(),d:today(),var:VAR});
+const SHORT={home:['h1','h2','h4','h7'],gym:['g1','g6','g4','h7'],fit:['f1','f4','f3','f9']};
+const exById=id=>[...WARM,...HOME,...GYM,...FIT,...COOL].find(x=>x.id===id);
+function wkStart(short){audioInit();const who=['m','t'].filter(w=>document.getElementById('ww-'+w).checked);if(!who.length){alert('Vyber, kto cvičí.');return;}
+  const steps=[];if(short){['w1','w2'].forEach(id=>steps.push({ex:exById(id),part:'warm'}));SHORT[VAR].map(exById).filter(Boolean).forEach(ex=>steps.push({ex,part:'main'}));['c3','c4'].forEach(id=>steps.push({ex:exById(id),part:'cool'}));}
+  else{WARM.forEach(ex=>steps.push({ex,part:'warm'}));MAINL().forEach(ex=>steps.push({ex,part:'main'}));COOL.forEach(ex=>steps.push({ex,part:'cool'}));}
+  Object.assign(WK,{on:true,who,steps,i:0,log:{},start:Date.now(),d:today(),var:VAR,short:!!short});
   document.body.classList.add('wkon');document.getElementById('wk').hidden=false;wkStep(0);
   try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(l=>WK.lock=l).catch(()=>{});}catch(e){}
-  say('Začíname. '+(WK.steps[0].ex.n));}
+  say((short?'Krátky tréning. ':'')+'Začíname. '+(WK.steps[0].ex.n));}
 function wkClose(ask){if(ask&&!confirm('Ukončiť tréning bez uloženia?'))return;WK.on=false;clearInterval(WK.tid);document.body.classList.remove('wkon');document.getElementById('wk').hidden=true;
   const sv=document.getElementById('wkView');unregisterViews(sv);sv.innerHTML='';try{WK.lock&&WK.lock.release();}catch(e){}}
 function wkStep(i,keep){
@@ -26,10 +29,10 @@ function wkStep(i,keep){
   const vs=[[who0,vi]];WK.who.slice(1).forEach(w=>{const x=vIdx(ex,w);if(x!==vi)vs.push([w,x]);});
   sv.innerHTML=`<div class="wkcard${vs.length>1?' two':''}">${vs.map(([w,x])=>`<div class="v3" data-who="${w}" data-vi="${x}"><canvas></canvas><span class="ld">Načítavam…</span>${vs.length>1?`<span class="tag ${w}">${WHO2[w]}</span>`:''}${viewTools(ex)}</div>`).join('')}</div>`;
   registerViews(sv,ex,i);
-  const parts={warm:'Rozcvička',main:'Hlavná časť',cool:'Strečing'};
+  const parts=WK.short?{warm:'⚡ Krátky · rozcvička',main:'⚡ Krátky · hlavná časť',cool:'⚡ Krátky · strečing'}:{warm:'Rozcvička',main:'Hlavná časť',cool:'Strečing'};
   document.getElementById('wkHead').innerHTML=`<span>${parts[st.part]} · ${i+1}/${WK.steps.length}</span><b>${ex.n}</b>`;
   document.getElementById('wkProg').style.width=(100*i/WK.steps.length)+'%';
-  const per=WK.who.map(w=>{const D=doseOf(ex,w);const v=ex.v[vIdx(ex,w)];const L=lastLog(w,ex.id)[0];
+  const per=WK.who.map(w=>{let D=doseOf(ex,w);if(WK.short&&st.part==='main')D=Object.assign({},D,{sets:Math.min(D.sets||1,2),why:[...(D.why||[]),'krátky tréning']});const v=ex.v[vIdx(ex,w)];const L=lastLog(w,ex.id)[0];
     const lastKg=L&&L.s&&L.s.length?L.s[L.s.length-1][1]:'';const mk=String(D.w||'').match(/(\d+(?:[.,]\d+)?)\s*(?:[–-]\s*\d+(?:[.,]\d+)?)?\s*kg/);const defKg=lastKg||(mk?mk[1]:'');
     const repsN=parseInt(D.reps)||'';
     return {w,D,v,defKg:(v.weighted===false||ex.both)?'':defKg,repsN,done:keep&&keep[w]||0};});
@@ -63,7 +66,7 @@ function timerRun(secs,label,after){clearInterval(WK.tid);const end=Date.now()+s
     if(s===10&&secs>15)say('Ešte desať sekúnd');if(s<=3&&s>0)tone(660,0,0.15);
     if(s<=0){clearInterval(WK.tid);tone(880,0,0.3);tone(880,0.35,0.3);tone(1175,0.7,0.45);vib([200,100,200]);tb.hidden=true;after&&after();}};
   WK.tid=setInterval(tick,200);tick();}
-document.addEventListener('click',e=>{if(!WK.on){if(e.target.closest('#wkGo'))wkStart();return;}
+document.addEventListener('click',e=>{if(!WK.on){if(e.target.closest('#wkGo'))wkStart();else if(e.target.closest('#wkShort'))wkStart(true);return;}
   const t=e.target;
   if(t.closest('#wkX'))return wkClose(true);
   if(t.closest('#wkBack'))return wkStep(Math.max(0,WK.i-1));
@@ -95,9 +98,30 @@ function wkFinish(){clearInterval(WK.tid);const sv=document.getElementById('wkVi
    `<p class="mute">Myslí sa bolesť počas cvičenia alebo hneď po ňom, nie obyčajná únava svalov.</p><div class="wkbtns"><button type="button" class="big go" id="wkSave">💾 Uložiť tréning</button></div>`;
   say('Výborne, tréning je hotový. Ako sa cíti chrbát a bedro?');}
 document.addEventListener('click',e=>{if(!e.target.closest('#wkSave'))return;const mins=Math.round((Date.now()-WK.start)/60000);
+  const summ=wkSummary();
   WK.who.forEach(w=>{const pain={};pain[w]={b:+(document.querySelector(`input[name=p${w}b]:checked`)||{}).value||0,h:+(document.querySelector(`input[name=p${w}h]:checked`)||{}).value||0};
     const ex={};for(const id in WK.log){if(WK.log[id][w])ex[id]={[w]:WK.log[id][w]};}
     live().filter(x=>x.who===w&&x.d===WK.d&&x.t==='train').forEach(x=>delEntry(x.id));
-    addEntry({who:w,d:WK.d,t:'train',var:WK.var,ex,pain,min:mins});});
-  dbSave();wkClose(false);refreshLog();build();toast('💾 Tréning uložený ('+mins+' min)');
-  calSel=WK.d;showTab('cal');});
+    addEntry(Object.assign({who:w,d:WK.d,t:'train',var:WK.var,ex,pain,min:mins},WK.short?{short:1}:{}));});
+  dbSave();wkClose(false);refreshLog();build();
+  calSel=WK.d;showTab('cal');celebrate(mins,summ);});
+
+/* ---------- summary + celebration ---------- */
+function wkSummary(){const out={};const mx=s=>{const k=(s||[]).map(q=>parseFloat(String(q[1]||'').replace(',','.'))).filter(n=>!isNaN(n));return k.length?Math.max(...k):null;};
+  const rs=s=>(s||[]).map(q=>parseInt(q[0])).filter(n=>!isNaN(n)).reduce((a,b)=>a+b,0);
+  WK.who.forEach(w=>{let sets=0,reps=0;const pr=[];for(const id in WK.log){const L=WK.log[id][w];if(!L||!L.s)continue;sets+=L.s.length;reps+=rs(L.s);
+      const prev=lastLog(w,id)[0];const ex=exById(id);if(!prev||!ex)continue;const a=mx(prev.s),b=mx(L.s);
+      if(a!=null&&b!=null&&b>a)pr.push(`${ex.n}: ${f1(a)} → <b>${f1(b)} kg</b>`);else if(a==null&&b==null&&rs(L.s)>rs(prev.s))pr.push(`${ex.n}: ${rs(prev.s)} → <b>${rs(L.s)} opakovaní</b>`);}
+    out[w]={sets,reps,pr};});return out;}
+function celebrate(mins,summ){let el=document.getElementById('cele');if(!el){el=document.createElement('div');el.id='cele';document.body.appendChild(el);}
+  const n=Object.keys(summ).length;const wk={};Object.keys(summ).forEach(w=>{const m=monday(today());wk[w]=entries(w).filter(x=>x.t==='train'&&x.d>=m).length;});
+  const praise=['Výborne!','Skvelá práca!','Super, len tak ďalej!','Paráda!','To je ono!'][Math.floor(Math.random()*5)];
+  el.innerHTML=`<canvas></canvas><div class="celc"><div class="celbig">🎉</div><h2>${praise}</h2><p class="mute">Tréning hotový za ${mins} min</p>
+   ${Object.entries(summ).map(([w,o])=>`<div class="celp ${w}"><b>${WHO2[w]}</b><div class="celn"><span><i>${o.sets}</i>sérií</span><span><i>${o.reps}</i>opakovaní</span><span><i>${wk[w]}</i>tréning${wk[w]===1?'':wk[w]<5?'y':'ov'} tento týždeň</span></div>${o.pr.length?`<p class="celpr">⭐ Lepšie ako minule:<br>${o.pr.join('<br>')}</p>`:''}</div>`).join('')}
+   <button type="button" class="big go" id="celOk">Pokračovať</button></div>`;
+  el.hidden=false;say(praise+' Tréning je uložený.');const cv=el.querySelector('canvas');confetti(cv);}
+document.addEventListener('click',e=>{if(e.target.closest('#celOk')){const el=document.getElementById('cele');el.hidden=true;el.innerHTML='';}});
+function confetti(cv){const c=cv.getContext('2d');const W=cv.width=innerWidth*devicePixelRatio,H=cv.height=innerHeight*devicePixelRatio;const cols=['#d9573b','#1f6f9f','#2f7a3a','#f2b134','#8e5bd6'];
+  const P=Array.from({length:160},()=>({x:Math.random()*W,y:-Math.random()*H*0.6,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,r:4+Math.random()*6,a:Math.random()*6,va:(Math.random()-.5)*.3,c:cols[Math.floor(Math.random()*cols.length)]}));
+  const t0=performance.now();(function f(t){c.clearRect(0,0,W,H);const k=devicePixelRatio;P.forEach(p=>{p.x+=p.vx*k;p.y+=p.vy*k;p.a+=p.va;c.save();c.translate(p.x,p.y);c.rotate(p.a);c.fillStyle=p.c;c.fillRect(-p.r*k/2,-p.r*k/4,p.r*k,p.r*k/2);c.restore();});
+    if(t-t0<4000&&cv.isConnected)requestAnimationFrame(f);else c.clearRect(0,0,W,H);})(t0);}

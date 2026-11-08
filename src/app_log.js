@@ -49,7 +49,9 @@ async function gh(path,opt){
   if(r.status===403)throw new Error('Token nemá právo zapisovať do repozitára '+SC.repo+'.');
   return r;}
 function mergeDB(a,b){const m=new Map();[...a.e,...b.e].forEach(x=>{const o=m.get(x.id);if(!o||(x.u||0)>(o.u||0))m.set(x.id,x);});
-  const cfg=((a.cfg&&a.cfg.u)||0)>=((b.cfg&&b.cfg.u)||0)?a.cfg:b.cfg;return {v:1,e:[...m.values()],cfg:cfg||{}};}
+  const cfg=((a.cfg&&a.cfg.u)||0)>=((b.cfg&&b.cfg.u)||0)?a.cfg:b.cfg;const push=Object.assign({},a.push||{});Object.entries(b.push||{}).forEach(([k,v])=>{if(!push[k]||(v.u||0)>(push[k].u||0))push[k]=v;});
+  const body={},bb=Object.assign({},a.body||{});Object.entries(b.body||{}).forEach(([k,v])=>{if(!bb[k]||(v.u||0)>(bb[k].u||0))bb[k]=v;});
+  return {v:1,e:[...m.values()],cfg:cfg||{},push,body:bb};}
 async function sync(){
   if(!SC.token)return;if(busy){again=true;return;}busy=true;setSync('Synchronizujem…');
   try{
@@ -147,8 +149,18 @@ function dedupe(){const keep=new Map();let ch=false;
   live().forEach(x=>{const k=x.who+'|'+x.d+'|'+x.t;const o=keep.get(k);if(!o){keep.set(k,x);return;}
     const sc=y=>(y.ex?1e6+Object.keys(y.ex).length:0)+(y.u||0)/1e13;const [win,lose]=sc(x)>sc(o)?[x,o]:[o,x];keep.set(k,win);delEntry(lose.id);ch=true;});
   if(ch)dbSave();return ch;}
-function refreshLog(){dedupe();RECS={m:recFor('m'),t:recFor('t')};renderToday();renderCal();renderCharts();renderPlan();}
-function renderToday(){const el=document.getElementById('tdDate');if(el)el.textContent=fmtD(today());}
+function refreshLog(){dedupe();RECS={m:recFor('m'),t:recFor('t')};renderToday();renderCal();renderCharts();renderPlan();try{renderBody();}catch(_){}}
+function renderToday(){const el=document.getElementById('tdDate');if(el)el.textContent=fmtD(today());renderWeek();
+  const h=new Date().getHours();const g=h<10?'Dobré ráno':h<18?'Dobrý deň':'Dobrý večer';const H=document.getElementById('hello');if(H)H.textContent=g+', mama a tato! 👋';
+  const S=document.getElementById('helloSub');if(S){const go=['m','t'].filter(w=>RECS[w]&&RECS[w].status==='go').length;S.textContent=go?'Dnes je dobrý deň na pohyb 💪':'Dnes oddych od posilňovania – prechádzka či plávanie poteší 🌿';}}
+function ring(n,goal,col){const r=26,C=2*Math.PI*r,f=Math.min(1,n/goal);return `<svg viewBox="0 0 64 64" class="ring"><circle cx="32" cy="32" r="${r}" fill="none" stroke="#ece6dc" stroke-width="8"/><circle cx="32" cy="32" r="${r}" fill="none" stroke="${col}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C*f} ${C}" transform="rotate(-90 32 32)"/><text x="32" y="37" text-anchor="middle">${n}/${goal}</text></svg>`;}
+function renderWeek(){const el=document.getElementById('weekBox');if(!el)return;const t=today(),m=monday(t),sun=dparse(t).getDay()===0;
+  const nm=addDays(m,7),ne=addDays(m,13);
+  el.innerHTML=`<div class="wkh2">${sun?'🏁 Zhrnutie týždňa':'📊 Tento týždeň'}</div><div class="wkrow">`+['m','t'].map(w=>{const E=entries(w).filter(x=>x.d>=m&&x.d<=addDays(m,6));const tr=E.filter(x=>x.t==='train').length;
+    const oth=['hike','swim','sm','pil','walk'].map(k=>{const n=E.filter(x=>x.t===k).length;return n?`<span title="${ACT[k].n}">${ACT[k].i}${n>1?'×'+n:''}</span>`:'';}).join('');
+    const msg=tr>=3?'Cieľ splnený naplno! 🌟':tr>=2?'Cieľ splnený ✓':sun?(tr?'Budúci týždeň skúste o jeden viac.':'Nový týždeň – nový začiatok.'):`Ešte ${2-tr} do cieľa`;
+    const nx=sun?[...recDays(w,ne)].filter(d=>d>=nm&&d<=ne).map(d=>fmtD(d).split(' ')[0]).join(', '):'';
+    return `<div class="wkp2 ${w}">${ring(tr,3,w==='m'?'#d9573b':'#1f6f9f')}<div><b>${WHO2[w]}</b><p>${msg}</p>${oth?`<p class="oth">${oth}</p>`:''}${nx?`<p class="mute">Budúci týždeň: ${nx}</p>`:''}</div></div>`;}).join('')+'</div>';}
 /* projected recommended training days (1 rest day between, max 3 per week) */
 function recDays(w,until){const t=today();until=until||addDays(t,42);const tr=entries(w).filter(x=>x.t==='train').map(x=>x.d);const set=new Set(tr);
   let last=tr.filter(d=>d<t).pop();const out=new Set();const wc={};tr.forEach(d=>{const m=monday(d);wc[m]=(wc[m]||0)+1;});
@@ -205,7 +217,7 @@ function dayBtns(ds){const W=quickWho();const st=(t,v)=>{const n=W.filter(w=>day
     Object.entries(ACT).filter(([k])=>k!=='train').map(([k,a])=>`<button type="button" class="${st(k)}" data-qa="${k}" data-d="${ds}">${a.i} ${a.n}</button>`).join('');}
 function showDay(ds){const el=document.getElementById('dayList');if(!el)return;const E=live().filter(x=>x.d===ds).sort((a,b)=>a.who<b.who?-1:1);const t=today();
   el.innerHTML=`<h4>${ds===t?'Dnes · ':''}${fmtD(ds)}${ds.slice(0,4)!==t.slice(0,4)?' '+ds.slice(0,4):''}</h4>${dayRec(ds)}`+
-    E.map(x=>`<div class="dl ${x.who}"><span>${actI(x)} <b>${WHO2[x.who]}</b> – ${actN(x)}${x.ex&&Object.keys(x.ex).length?' · '+Object.keys(x.ex).length+' cvikov':''}${x.pain&&x.pain[x.who]?painTxt(x.pain[x.who]):''}</span><button type="button" data-del="${x.id}" aria-label="Zmazať">✕</button></div>`).join('')+
+    E.map(x=>`<div class="dl ${x.who}"><span>${actI(x)} <b>${WHO2[x.who]}</b> – ${actN(x)}${x.short?' (krátky)':''}${x.min?' · '+x.min+' min':''}${x.ex&&Object.keys(x.ex).length?' · '+Object.keys(x.ex).length+' cvikov':''}${x.pain&&x.pain[x.who]?painTxt(x.pain[x.who]):''}</span><button type="button" data-del="${x.id}" aria-label="Zmazať">✕</button></div>`).join('')+
     `<div class="qadd"><span>${ds>t?'Naplánovať':'Zapísať'} pre: <b>${quickWho().map(w=>WHO2[w]).join(' a ')||'– vyber hore Mama / Tato –'}</b> · ťuknutím zapneš / vypneš</span>${dayBtns(ds)}</div>`;}
 const painTxt=p=>{const n=['bez bolesti','mierna','výrazná'];return ` · chrbát: ${n[p.b||0]}, bedro: ${n[p.h||0]}`;};
 function afterChange(){dbSave();refreshLog();try{build();}catch(_){}}
@@ -220,15 +232,20 @@ function quickWho(){return ['m','t'].filter(w=>{const c=document.getElementById(
 document.addEventListener('change',e=>{if(e.target.id==='ww-m'||e.target.id==='ww-t')showDay(calSel||today());});
 function toast(t,undo){let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';document.body.appendChild(el);}el.textContent=t;if(undo){const b=document.createElement('button');b.type='button';b.textContent='Vrátiť';b.onclick=()=>{el.classList.remove('on');undo();};el.appendChild(b);}el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),undo?5000:2600);}
 
+const plS=(n,a,b,c)=>n===1?a:n>=2&&n<=4?b:c;
 function renderCharts(){const el=document.getElementById('charts');if(!el)return;const all=[...HOME,...GYM,...FIT];const rows=[];
   all.forEach(ex=>{const ser={};['m','t'].forEach(w=>{ser[w]=entries(w).filter(x=>x.t==='train'&&x.ex&&x.ex[ex.id]&&x.ex[ex.id][w]).map(x=>{const s=x.ex[ex.id][w].s||[];const kg=s.map(q=>parseFloat(String(q[1]||'').replace(',','.'))).filter(n=>!isNaN(n));const rp=s.map(q=>parseInt(q[0])).filter(n=>!isNaN(n));return {d:x.d,kg:kg.length?Math.max(...kg):null,rp:rp.length?rp.reduce((a,b)=>a+b,0):0};});});
     if(ser.m.length+ser.t.length>=2)rows.push([ex,ser]);});
-  if(!rows.length){el.innerHTML='<p class="mute">Grafy pokroku sa objavia po pár zapísaných tréningoch v režime „Cvičíme“ (zapisujú sa kilá a opakovania).</p>';return;}
-  el.innerHTML=rows.map(([ex,ser])=>{const useKg=[...ser.m,...ser.t].some(p=>p.kg!=null);const val=p=>useKg?p.kg:p.rp;const pts=[...ser.m,...ser.t].filter(p=>val(p)!=null);
-    const ds=[...new Set(pts.map(p=>p.d))].sort();const mx=Math.max(...pts.map(val)),mn=Math.min(...pts.map(val));const W=300,H=90;
-    const X=d=>ds.length<2?W/2:12+(W-24)*ds.indexOf(d)/(ds.length-1),Y=v=>H-12-(H-26)*(mx===mn?0.5:(v-mn)/(mx-mn));
-    const line=(arr,c)=>{const a=arr.filter(p=>val(p)!=null);return a.length?`<polyline fill="none" stroke="${c}" stroke-width="2.5" points="${a.map(p=>X(p.d)+','+Y(val(p))).join(' ')}"/>`+a.map(p=>`<circle cx="${X(p.d)}" cy="${Y(val(p))}" r="3.5" fill="${c}"/>`).join(''):'';};
-    return `<div class="chart"><b>${ex.n}</b> <small>${useKg?'najväčšia váha (kg)':'opakovania spolu'} · ${mn}–${mx}</small><svg viewBox="0 0 ${W} ${H}">${line(ser.m,'#d9573b')}${line(ser.t,'#1f6f9f')}</svg></div>`;}).join('');}
+  const tot={m:entries('m').filter(x=>x.t==='train').length,t:entries('t').filter(x=>x.t==='train').length};
+  const head=`<div class="stats">${['m','t'].map(w=>{const E=entries(w);const hk=E.filter(x=>x.t==='hike').length,sw=E.filter(x=>x.t==='swim').length,mins=E.filter(x=>x.t==='train').reduce((a,x)=>a+(x.min||0),0);
+    return `<div class="stat ${w}"><b>${WHO2[w]}</b><div class="celn"><span><i>${tot[w]}</i>${plS(tot[w],'tréning','tréningy','tréningov')}</span><span><i>${hk}</i>${plS(hk,'turistika','turistiky','turistík')}</span><span><i>${sw}</i>${plS(sw,'plávanie','plávania','plávaní')}</span>${mins?`<span><i>${Math.round(mins/60*10)/10}</i>hodín cvičenia</span>`:''}</div></div>`;}).join('')}</div>`;
+  if(!rows.length){el.innerHTML=head+'<p class="mute">Grafy pokroku pri cvikoch sa objavia po pár tréningoch v režime „▶ Cvičíme“ (zapisujú sa kilá a opakovania).</p>';return;}
+  el.innerHTML=head+'<div class="charts">'+rows.map(([ex,ser])=>{const useKg=[...ser.m,...ser.t].some(p=>p.kg!=null);const val=p=>useKg?p.kg:p.rp;const pts=[...ser.m,...ser.t].filter(p=>val(p)!=null);
+    const ds=[...new Set(pts.map(p=>p.d))].sort();const mx=Math.max(...pts.map(val)),mn=Math.min(...pts.map(val));const W=320,H=120,pl=8,pr=8,pt=16,pb=18;
+    const X=d=>ds.length<2?W/2:pl+(W-pl-pr)*ds.indexOf(d)/(ds.length-1),Y=v=>H-pb-(H-pt-pb)*(mx===mn?0.5:(v-mn)/(mx-mn));
+    const line=(arr,c)=>{const a=arr.filter(p=>val(p)!=null);if(!a.length)return '';const L=a[a.length-1];return `<polyline fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" points="${a.map(p=>X(p.d)+','+Y(val(p))).join(' ')}"/>`+a.map((p,i)=>`<circle cx="${X(p.d)}" cy="${Y(val(p))}" r="${i===a.length-1?4.5:3}" fill="${i===a.length-1?c:'#fff'}" stroke="${c}" stroke-width="2"/>`).join('')+`<text x="${Math.min(W-4,X(L.d)+2)}" y="${Y(val(L))-8}" text-anchor="end" class="spkt" fill="${c}">${f1(val(L))}</text>`;};
+    const delta=w=>{const a=ser[w].filter(p=>val(p)!=null);if(a.length<2)return '';const d=val(a[a.length-1])-val(a[0]);return d?`<span class="bd ${d>0?'good':''}">${WHO2[w]} ${d>0?'+':''}${f1(d)}</span>`:'';};
+    return `<div class="chart"><div class="chh"><b>${ex.n}</b><small>${useKg?'najväčšia váha (kg)':'opakovania spolu'}</small></div><svg viewBox="0 0 ${W} ${H}"><line x1="${pl}" x2="${W-pr}" y1="${H-pb+6}" y2="${H-pb+6}" stroke="#ece6dc"/><text x="${pl}" y="${H-2}" class="axt">${fmtD(ds[0])}</text><text x="${W-pr}" y="${H-2}" text-anchor="end" class="axt">${fmtD(ds[ds.length-1])}</text>${line(ser.m,'#d9573b')}${line(ser.t,'#1f6f9f')}</svg><div class="chd">${delta('m')}${delta('t')}</div></div>`;}).join('')+'</div>';}
 function renderPlan(){const el=document.getElementById('plan4');if(!el)return;const R=RECS;
   const rows=[['1','Učíme sa techniku','o sériu menej pri cvikoch s 3+ sériami, pomaly a presne'],['2','Normálne','série a váhy podľa úrovne'],['3','Normálne, skúste pridať','ak bolo minule „ľahké“, pridajte váhu alebo 1–2 opakovania'],['4','Ľahší týždeň','o sériu menej – telo si odpočinie a zosilnie']];
   el.innerHTML=`<table class="p4"><tr><th>Týždeň</th><th>Čo</th><th>Ako</th></tr>${rows.map(r=>`<tr class="${(R.m.wk==r[0]||R.t.wk==r[0])?'cur':''}"><td>${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td></tr>`).join('')}</table><p class="mute">Teraz: mama týždeň ${R.m.wk}, tato týždeň ${R.t.wk} (počíta sa od prvého zapísaného tréningu). Po 4 týždňoch sa cyklus opakuje; keď sú cviky dlhodobo ľahké, stránka navrhne vyššiu úroveň.</p>`;}
@@ -240,7 +257,7 @@ function renderSync(){const el=document.getElementById('syncBox');if(!el)return;
   ${SC.token?`<div class="row"><button type="button" id="sNow">⟳ Synchronizovať teraz</button><button type="button" id="sOff">Odpojiť</button></div>`:
   `<label>GitHub token <input id="sTok" type="password" autocomplete="off" placeholder="github_pat_…"></label><label>Repozitár <input id="sRepo" value="${SC.owner}/${SC.repo}"></label><div class="row"><button type="button" id="sOn">Pripojiť</button></div>`}
   <div class="row"><button type="button" id="sExp">⬇ Záloha (súbor)</button><label class="btn">⬆ Obnoviť zo súboru<input id="sImp" type="file" accept=".json" hidden></label></div>`;
-  setSync(document.getElementById('syncSt').textContent);}
+  setSync(document.getElementById('syncSt').textContent);try{renderPush();}catch(_){}}
 document.addEventListener('click',async e=>{const id=e.target.id;
   if(id==='sOn'){const t=document.getElementById('sTok').value.trim(),r=document.getElementById('sRepo').value.trim().split('/');if(!t){alert('Vlož token.');return;}SC.token=t;if(r.length===2){SC.owner=r[0];SC.repo=r[1];}SC.dirty=true;saveSC();renderSync();await sync();}
   else if(id==='sOff'){if(confirm('Odpojiť? Záznamy ostanú v telefóne, len sa prestanú ukladať na GitHub.')){delete SC.token;saveSC();renderSync();}}

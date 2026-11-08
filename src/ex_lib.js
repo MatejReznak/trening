@@ -115,8 +115,8 @@ const ANIM={
  plankLeg:L=>{const a=ANIM.plankToes(L);const p=a.k[0];const th=angOf([30-p.x,FL-6.8-p.y]);
    return Object.assign(a,{k:[p,mix(p,{nl:{a:[th-12,th-12]}}),p,mix(p,{fl:{a:[th-12,th-12]}})],dur:1000,hold:700});},
  /* RDL */
- rdl:(L,deep,bar)=>{const FY=FYa(L);const R0=[13,14],R1=[14,16],SP=bar?0.6:-3.4;const s=standP(L,{na:{a:R0,sp:SP},fa:{a:R0,sp:SP}});
-   const b=mix(s,{x:100-(deep?0.3:0.19)*L.LEG,y:FY-L.LEG*(deep?0.925:0.955),t:deep?70:46,h:deep?8:4,nl:{to:[103,FY]},fl:{to:[100,FY]},na:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SP},fa:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SP}});
+ rdl:(L,deep,bar)=>{const FY=FYa(L);const R0=[13,14],R1=[14,16],SP=bar?0.6:-2.3,SPB=bar?0.6:-0.6;const s=standP(L,{na:{a:R0,sp:SP},fa:{a:R0,sp:SP}});
+   const b=mix(s,{x:100-(deep?0.3:0.19)*L.LEG,y:FY-L.LEG*(deep?0.925:0.955),t:deep?70:46,h:deep?8:4,nl:{to:[103,FY]},fl:{to:[100,FY]},na:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SPB},fa:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SPB}});
    return {k:[s,b],dur:1700,hold:450,hand:{all:'pron'},curl:{all:1},dyn:bar?'barbell':'db2'};},
  /* presses */
  floorPress:L=>{const FY=FYa(L);const x0=95;const p=supP(L,{x:x0,nl:{to:[x0+L.TH*1.25,FY],b:-1},fl:{to:[x0+L.TH*1.23,FY],b:-1}});
@@ -192,8 +192,8 @@ Object.assign(ANIM,{
      props:[['chestPress',{st,hx,t,hb:L.hipBack,T:L.T,hy,near}]],dyn:{type:'chestPress',near:X3(near)}};},
  cableRow:L=>{const st=FL-0.40*U60,hx=80;const p0=seatP(L,st,hx,4,{h:-4});const feetX=hx+L.LEG*0.86,fy=FYa(L)-6;
    const legs={nl:{to:[feetX,fy],b:-1,sp:1},fl:{to:[feetX-1,fy+0.5],b:-1,sp:1},fo:-X3(feetX+L.ankleH*0.95)};
-   const a=mix(p0,Object.assign({t:16,h:-12},legs));const sa=shOf(L,a);a.na={to:[sa[0]+L.ARM*0.93,sa[1]+L.ARM*0.32],b:1,sp:0.2};a.fa=a.na;
-   const b=mix(p0,Object.assign({t:-4,h:4},legs));const sb=shOf(L,b);b.na={to:[hx+6,p0.y-L.T*0.42],b:1,sp:0.6,spE:3};b.fa=b.na;
+   const a=mix(p0,Object.assign({t:16,h:-12},legs));const sa=shOf(L,a);a.na={to:[sa[0]+L.ARM*0.93,sa[1]+L.ARM*0.32],b:1,sp:-(L.shW-3.4),spE:-(L.shW*0.45)};a.fa=a.na;
+   const b=mix(p0,Object.assign({t:-4,h:4},legs));const sb=shOf(L,b);b.na={to:[hx+6,p0.y-L.T*0.42],b:1,sp:-(L.shW-3.4),spE:1.5};b.fa=b.na;
    return {k:[a,b],dur:1300,hold:450,curl:{all:1},ground:false,footN:[-1,0],footRelax:12,
      props:[['cableRow',{st,hx,feetX:feetX+L.ankleH*0.95,fy}]],dyn:{type:'cableRow',px:X3(feetX+L.ankleH*0.95+3),py:Y3(fy)}};},
  legCurl:L=>{const st=seatTopFor(L)-6,hx=92,t=-12;const p=seatP(L,st,hx,t);
@@ -217,7 +217,7 @@ Object.assign(ANIM,{
    if(kneel){const kneeY=FL-L.kneeR;base={x:100,y:kneeY-L.TH*0.99,t:0,c:0,h:0,nl:{a:[0,-90],sp:2},fl:{a:[0,-90],sp:2}};}
    else base=standP(L,{y:FY-L.LEG*0.975,nl:{to:[101,FY],sp:2.6},fl:{to:[99,FY],sp:2.6}});
    const sh=shOf(L,base);const near=[sh[0]+5,sh[1]+6.5],far=[sh[0]+L.ARM*0.93,sh[1]+5];
-   const mk=h=>mix(base,{na:{to:h,b:1,sp:-L.shW*0.82,spE:-1},fa:{to:h,b:1,sp:L.shW*0.82,spE:1}});
+   const mk=h=>mix(base,{na:{to:h,b:1,sp:-(L.shW-3.2),spE:-1},fa:{to:h,b:1,sp:-(L.shW-3.2),spE:-1}});
    return {k:[mk(near),mk(far)],dur:1300,hold:900,curl:{all:1},
      props:[['cableTower',{y:sh[1]+6}]],dyn:{type:'pallof',py:Y3(sh[1]+6)}};},
  bike:L=>{const cx=104,cy=FL-0.30*U60,r=0.17*U60;const hx=90;const hY=cy+r-L.ankleH*0.9-Math.sqrt(Math.pow(0.975*L.LEG,2)-Math.pow(10,2));const st=hY+L.hipBack*0.92;

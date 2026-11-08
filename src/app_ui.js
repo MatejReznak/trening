@@ -89,9 +89,10 @@ function renderViews(now){
     if(n++>=budget)break;
     const p=poseAtTime(v.an,now+v.phase);poseInstance(v.inst,p,v.opt);updateDyn(v.dyn,v.inst);
     const w=v.canvas.width,h=v.canvas.height;
-    if(v.dual){const y0=v.yaw,p0=v.pitch;const hw=Math.floor(w/2);GLR.setScissorTest(true);GLR.setViewport(0,0,w,h);GLR.setScissor(0,0,w,h);GLR.clear();
-      v.yaw=0.08;v.pitch=0.12;camFor(v,hw/h);GLR.setViewport(0,0,hw,h);GLR.setScissor(0,0,hw,h);GLR.render(v.scene,v.cam);
-      v.yaw=Math.PI/2-0.12;camFor(v,hw/h);GLR.setViewport(hw,0,w-hw,h);GLR.setScissor(hw,0,w-hw,h);GLR.render(v.scene,v.cam);v.yaw=y0;v.pitch=p0;}
+    if(v.dual){const y0=v.yaw,p0=v.pitch;GLR.setScissorTest(true);GLR.setViewport(0,0,w,h);GLR.setScissor(0,0,w,h);GLR.clear();
+      const R=[];if(h>w*0.9){const hh=Math.floor(h/2);R.push([0,h-hh,w,hh],[0,0,w,h-hh]);}else{const hw=Math.floor(w/2);R.push([0,0,hw,h],[hw,0,w-hw,h]);}
+      [[0.08,0.12],[Math.PI/2-0.12,0.12]].forEach(([yw,pt],k)=>{const r=R[k];v.yaw=yw;v.pitch=pt;camFor(v,r[2]/r[3]);GLR.setViewport(r[0],r[1],r[2],r[3]);GLR.setScissor(r[0],r[1],r[2],r[3]);GLR.render(v.scene,v.cam);});
+      v.yaw=y0;v.pitch=p0;}
     else{camFor(v,w/h);GLR.setViewport(0,0,w,h);GLR.setScissor(0,0,w,h);GLR.setScissorTest(true);GLR.clear();GLR.render(v.scene,v.cam);}
     v.ctx.clearRect(0,0,w,h);v.ctx.drawImage(gc,0,gc.height-h,w,h,0,0,w,h);
   }

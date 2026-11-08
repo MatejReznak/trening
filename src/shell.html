@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tréningový plán – mama a tato</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f3ee;--card:#fff;--ink:#1f2a37;--mute:#5b6675;--line:#e6e0d6;--mama:#d9573b;--mama-bg:#fdece7;--tato:#1f6f9f;--tato-bg:#e5f1f8;--acc:#2f7d5b;--acc-bg:#e6f3ec;--warn:#b7791f;--warn-bg:#fdf3e1;--red:#c0392b}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Nunito,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:17px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 16px 120px}
+h1{font-size:1.9rem;line-height:1.2;margin:.2em 0;font-weight:800}
+h2{font-size:1.4rem;margin:1.8em 0 .5em;font-weight:800}
+h3{margin:0;font-size:1.15rem;font-weight:800}
+p{margin:.4em 0}.sub{color:var(--mute);margin:0 0 1em}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-weight:700;font-size:.85rem}.pm{background:var(--mama-bg);color:var(--mama)}.pt{background:var(--tato-bg);color:var(--tato)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:12px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+ul.tight{margin:.3em 0;padding-left:1.2em}ul.tight li{margin:.25em 0}
+/* controls */
+.controls{position:sticky;top:0;z-index:20;background:rgba(246,243,238,.96);backdrop-filter:blur(6px);margin:0 -16px;padding:8px 16px;border-bottom:1px solid var(--line)}
+.seg{display:flex;gap:6px;margin:3px 0}
+.seg button{flex:1;min-width:0;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 6px;font:inherit;font-weight:700;color:var(--ink);cursor:pointer}
+.seg button.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.lvrow{display:flex;gap:10px;margin-top:4px}
+.lvseg{flex:1;display:flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:4px 6px}
+.lvseg .lbl{font-weight:800;font-size:.86rem;margin-right:2px;white-space:nowrap}
+.lvseg[data-who=m] .lbl{color:var(--mama)}.lvseg[data-who=t] .lbl{color:var(--tato)}
+.lvseg button{flex:1;border:0;border-radius:9px;padding:6px 0;font:inherit;font-weight:800;background:#f1ede6;color:var(--ink);cursor:pointer}
+.lvseg[data-who=m] button.on{background:var(--mama);color:#fff}.lvseg[data-who=t] button.on{background:var(--tato);color:#fff}
+.lvlbl{font-size:.72rem;color:var(--mute);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+/* week */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center;font-size:.85rem}
+.day b{display:block;font-size:.95rem}.day.tr{background:var(--ink);color:#fff;border-color:var(--ink)}.day.pl{background:var(--acc-bg);border-color:#bfe0cd}.day.hk{background:var(--warn-bg);border-color:#f0d9ab}
+@media (max-width:640px){.week{grid-template-columns:repeat(4,1fr)}}
+.sect{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.sect .time{color:var(--mute);font-weight:700}
+.note{border-left:4px solid var(--acc);background:var(--acc-bg);padding:10px 14px;border-radius:10px;margin:10px 0}
+.note.w{border-color:var(--warn);background:var(--warn-bg)}
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.ex{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.ex .fig{background:linear-gradient(#fbfaf7,#efe9df);border-bottom:1px solid var(--line);position:relative}
+.ex .num{position:absolute;top:10px;left:10px;z-index:3;background:var(--ink);color:#fff;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.9rem}
+.v3{position:relative;aspect-ratio:3/2;touch-action:pan-y;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;outline:2px solid transparent;outline-offset:-2px;transition:outline-color .2s}
+.v3+.v3{border-top:1px dashed var(--line)}
+.v3 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.v3 svg{position:absolute;inset:0;width:100%;height:100%}
+.v3.active{touch-action:none;outline-color:var(--acc);cursor:grab}
+.v3 .tag{position:absolute;top:10px;right:10px;z-index:2;font-size:.78rem;font-weight:800;padding:2px 9px;border-radius:99px;background:#fff;border:1px solid var(--line);max-width:72%;text-align:right}
+.v3 .tag.m{color:var(--mama);background:var(--mama-bg);border-color:#f3c9bd}.v3 .tag.t{color:var(--tato);background:var(--tato-bg);border-color:#bcd9ea}
+.v3 .hint{position:absolute;bottom:6px;right:10px;z-index:2;font-size:.72rem;color:var(--mute);background:rgba(255,255,255,.75);padding:1px 7px;border-radius:99px}
+.v3 .h1{display:none}.v3.active .h0{display:none}.v3.active .h1{display:inline;color:var(--acc);font-weight:700}
+.v3 .rst{display:none;position:absolute;bottom:6px;left:10px;z-index:2;border:1px solid var(--line);background:#fff;border-radius:99px;width:30px;height:30px;font-size:1rem;cursor:pointer}
+.v3.active .rst{display:block}
+.v3 .ld{position:absolute;inset:0;display:grid;place-items:center;color:var(--mute);font-size:.85rem;font-weight:700}
+.v3.ready .ld{display:none}.v3.flat .hint{display:none}
+.ex .body{padding:12px 16px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.ex ol{margin:0;padding-left:1.2em}.ex ol li{margin:.2em 0}
+.vrows{display:flex;flex-direction:column;gap:5px}
+.vrow{display:grid;grid-template-columns:44px auto 1fr auto;align-items:center;gap:6px;font-size:.88rem}
+.vrow .who{font-weight:800}.vrow.m .who{color:var(--mama)}.vrow.t .who{color:var(--tato)}
+.vrow .vl{font-weight:700;text-align:center;line-height:1.2}
+.vrow button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:5px 8px;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--ink);white-space:nowrap}
+.vrow.m button:not(:disabled):hover{border-color:var(--mama)}.vrow.t button:not(:disabled):hover{border-color:var(--tato)}
+.vrow button:disabled{opacity:.35;cursor:default}
+.vnote{margin:0;padding-left:1.1em;font-size:.9rem;color:#3d4757}
+.ex .warn{font-size:.92rem;background:var(--warn-bg);border-radius:10px;padding:7px 10px}.ex .warn b{color:var(--warn)}
+.dose{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto}
+.dose>div{border-radius:12px;padding:8px 10px;font-size:.92rem;line-height:1.3}
+.dose .m{background:var(--mama-bg)}.dose .t{background:var(--tato-bg)}.dose .m b{color:var(--mama)}.dose .t b{color:var(--tato)}
+.dose .both{grid-column:1/-1;background:#f1efe9}
+.dose .sets{display:block;font-weight:800;font-size:1.02rem;margin-top:2px}.dose small{display:block;color:#4a5260;margin-top:2px}
+.yt{font-size:.88rem;font-weight:700;color:var(--mute);text-decoration:none}.yt:hover{text-decoration:underline}
+/* tracker */
+.trk{display:grid;grid-template-columns:auto repeat(3,1fr);gap:4px 8px;align-items:center;max-width:520px}
+.trk .wk{font-weight:700;font-size:.9rem;color:var(--mute)}
+.trk label{display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px;cursor:pointer;font-size:.85rem;gap:6px}
+.trk input{width:18px;height:18px;accent-color:var(--acc)}.trk .ph{grid-column:1/-1;font-weight:800;margin-top:8px}
+/* timer */
+.timer{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:30;background:var(--ink);color:#fff;border-radius:18px;padding:7px 9px;display:flex;gap:5px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:calc(100% - 20px)}
+.timer .tv{font-weight:800;font-size:1.2rem;min-width:54px;text-align:center;font-variant-numeric:tabular-nums}
+.timer button{background:#334155;color:#fff;border:0;border-radius:10px;padding:7px 9px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+.timer button.stop{background:var(--mama)}.timer.done{animation:fl .5s 4}@keyframes fl{50%{background:var(--acc)}}
+.foot{color:var(--mute);font-size:.85rem;margin-top:30px}
+h2,.cards{scroll-margin-top:150px}
+@media (max-width:640px){.seg button{padding:7px 4px;font-size:.9rem}.lvrow{gap:6px}.lvseg .lbl{font-size:.8rem}.timer{gap:4px;padding:6px 8px}.timer button{padding:7px 7px;font-size:.85rem}.timer .tv{font-size:1.05rem;min-width:46px}}
+.yts{display:flex;flex-direction:column;gap:4px}
+.v3 .vtools{position:absolute;top:8px;left:8px;z-index:3;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.v3 .vtools button{font:inherit;font-size:.7rem;font-weight:800;padding:3px 8px;border-radius:99px;border:1px solid var(--line);background:rgba(255,255,255,.88);cursor:pointer;color:var(--ink)}
+.v3 .vtools button.on{background:var(--ink);color:#fff;border-color:var(--ink)}.v3 .vtools button.bt.on{background:#c7352b;border-color:#c7352b}
+.v3 .vinfo{position:absolute;left:8px;right:8px;bottom:34px;z-index:3;font-size:.76rem;font-weight:600;color:#7a1d16;pointer-events:none;text-shadow:0 0 4px #fff,0 0 4px #fff}
+.v3 .vinfo:empty{display:none}.v3.isbad{outline:3px solid #c7352b!important;outline-offset:-3px}
+.v3.flat .vtools{display:none}
+
+.todaybox{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin:14px 0}
+.tdhead{display:flex;justify-content:space-between;align-items:center}.sb{font-size:1.2rem}
+.today{display:grid;gap:10px;margin:10px 0}@media(min-width:700px){.today{grid-template-columns:1fr 1fr}}
+.tdy{border-radius:12px;padding:10px 12px}.tdy.m{background:var(--mama-bg)}.tdy.t{background:var(--tato-bg)}
+.tdy h4{margin:0 0 4px;display:flex;gap:8px;align-items:center}.tdy p{margin:3px 0;font-size:.92rem}.tdy .up{font-weight:700;color:#2f7a3a}
+.st{font-size:.72rem;padding:1px 8px;border-radius:99px;background:#fff;font-weight:800}.st.go{color:#2f7a3a}.st.rest{color:#9a6a00}.st.done{color:#555}
+.mute{color:var(--mute);font-size:.85rem}
+.gobox,.qbox{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:10px;font-size:.92rem}
+.qbtns{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.qbtns button,.qadd button,.syncbox button,.syncbox .btn{font:inherit;font-size:.86rem;padding:7px 11px;border-radius:99px;border:1px solid var(--line);background:#faf7f2;cursor:pointer}
+button.big{font:inherit;font-weight:800;font-size:1.05rem;padding:12px 20px;border-radius:14px;border:0;background:var(--ink);color:#fff;cursor:pointer}
+button.big.go{background:#2f7a3a}
+.cal{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
+.calh,.calr{display:grid;grid-template-columns:34px repeat(7,1fr);gap:3px;text-align:center;font-size:.75rem;color:var(--mute)}
+.cd{font:inherit;border:1px solid var(--line);background:#fcfaf6;border-radius:8px;min-height:52px;padding:2px;display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.cd i{font-style:normal;font-size:.7rem;color:var(--mute)}.cd b{font-size:.78rem;line-height:1.1;min-height:.9em}.cd.tod{outline:2px solid #2f7a3a}.cd.fut{opacity:.5}
+.cd b.m{border-bottom:2px solid var(--mama)}.cd b.t{border-bottom:2px solid var(--tato)}.cd b:empty{border:0}
+.wkl{align-self:center}.leg{font-size:.75rem;color:var(--mute);margin-top:6px}.leg b.m{color:var(--mama)}.leg b.t{color:var(--tato)}
+#dayList h4{margin:12px 0 6px}.dl{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;margin:4px 0;font-size:.88rem}.dl.m{background:var(--mama-bg)}.dl.t{background:var(--tato-bg)}
+.dl button{border:0;background:none;font-size:1rem;cursor:pointer;color:#a33}.qadd{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:.85rem;align-items:center}
+.chart{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:6px 0}.chart svg{width:100%;height:90px;display:block}
+.p4{width:100%;border-collapse:collapse;font-size:.9rem;background:#fff;border-radius:12px;overflow:hidden}.p4 td,.p4 th{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.p4 tr.cur{background:#eaf5ea}
+.syncbox{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:8px;font-size:.9rem}.syncbox input,.syncbox select{font:inherit;width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;margin-top:3px}
+.syncbox .row{display:flex;flex-wrap:wrap;gap:8px}#syncSt.err{color:#b3261e;font-weight:700}
+small.adj{display:block;color:#9a6a00;font-weight:700}small.prog{display:block;color:#2f6a3a}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#1f2328;color:#fff;padding:10px 16px;border-radius:12px;font-size:.9rem;opacity:0;transition:.25s;z-index:60;max-width:90vw;pointer-events:none}#toast.on{opacity:1;transform:translateX(-50%)}
+body.wkon{overflow:hidden}body.wkon .timer{display:none}
+[hidden]{display:none!important}
+.wk{position:fixed;inset:0;z-index:50;background:var(--bg,#f5f1ea);display:flex;flex-direction:column}
+.wktop{display:flex;align-items:center;gap:8px;padding:10px 12px 6px}.wktop button{font:inherit;font-size:1.2rem;border:1px solid var(--line);background:#fff;border-radius:99px;width:40px;height:40px;cursor:pointer}
+.wkh{flex:1;min-width:0}.wkh span{display:block;font-size:.78rem;color:var(--mute)}.wkh b{font-size:1.1rem}
+.wkbar{height:5px;background:#e6dfd3;margin:0 12px;border-radius:9px;overflow:hidden}.wkbar i{display:block;height:100%;background:#2f7a3a;width:0;transition:width .3s}
+.wkscroll{flex:1;overflow:auto;padding:10px 12px 90px}.wkcard{border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--line)}.wkcard .v3{aspect-ratio:16/10}
+.wkdose{font-size:1.2rem;font-weight:800;margin:12px 0 4px}.wkhow{padding-left:20px;font-size:.95rem}
+.wkp{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:10px 0}.wkp.m{border-left:5px solid var(--mama)}.wkp.t{border-left:5px solid var(--tato)}.wkp.fin{opacity:.92}
+.wkph{display:flex;gap:8px;align-items:baseline}.wkph span{font-size:.8rem;color:var(--mute)}.wkset{font-size:1.15rem;margin:4px 0}
+.wkin{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}.wkin label{font-size:.75rem;color:var(--mute);display:flex;flex-direction:column}.wkin input{font:inherit;font-size:1.05rem;width:70px;padding:8px;border:1px solid var(--line);border-radius:10px}
+.wkin .sd{font:inherit;font-weight:800;padding:11px 14px;border:0;border-radius:12px;background:#2f7a3a;color:#fff;cursor:pointer;flex:1;min-width:140px}.wkin .sd:disabled{background:#bbb}
+.dots{display:flex;gap:5px;margin:8px 0 2px}.dots i{width:12px;height:12px;border-radius:50%;background:#e2dbcf}.dots i.on{background:#2f7a3a}
+.rate{margin-top:8px;font-size:.88rem;display:flex;flex-wrap:wrap;gap:6px;align-items:center}.rate button{font:inherit;padding:7px 10px;border-radius:99px;border:1px solid var(--line);background:#fff;cursor:pointer}.rate button.on{background:var(--ink);color:#fff}
+.wkt{font-size:.85rem}.warn{background:#fff6e0;border-radius:10px;padding:8px 10px;font-size:.88rem}
+.wkbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.wkbtns .big{flex:1}
+.wkfoot{position:absolute;left:12px;bottom:12px}.wkfoot button{font:inherit;padding:9px 14px;border-radius:99px;border:1px solid var(--line);background:#fff}
+.wktimer{position:absolute;left:0;right:0;bottom:0;background:#1f2328;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:14px;z-index:5}
+.wktimer b{font-size:2.4rem;font-variant-numeric:tabular-nums}.wktimer span{flex:1;font-size:1rem}.wktimer button{font:inherit;padding:9px 14px;border-radius:99px;border:0;background:#fff;color:#111}
+.pain{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:6px 0;font-size:.9rem}.pain span{width:100%;font-weight:700;font-size:.85rem}
+.wkcard.two{display:grid;grid-template-columns:1fr 1fr}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Tréningový plán pre mamu a tatu</h1>
+<p class="sub">Pohyblivosť, sila, zdravý chrbát a kondícia · 3× týždenne · cvičíte spolu, každý na svojej úrovni (<span class="pill pm">Mama</span> <span class="pill pt">Tato</span>).</p>
+
+<div class="controls">
+  <div class="seg" id="segVar"><button data-v="home" class="on">🏠 Doma</button><button data-v="gym">🏋️ Domáca posilňovňa</button><button data-v="fit">🏢 Fitnes&shy;centrum</button></div>
+  <div class="lvrow">
+    <div class="lvseg" data-who="m"><span class="lbl">Mama</span><button data-l="1">1</button><button data-l="2">2</button><button data-l="3">3</button><button data-l="4">4</button></div>
+    <div class="lvseg" data-who="t"><span class="lbl">Tato</span><button data-l="1">1</button><button data-l="2">2</button><button data-l="3">3</button><button data-l="4">4</button></div>
+  </div>
+</div>
+
+<div class="todaybox" id="todayBox">
+  <div class="tdhead"><h2 style="margin:0">📅 Dnes</h2><span id="syncBadge" class="sb" title="">📱</span></div>
+  <div class="today" id="today"></div>
+  <div class="gobox"><span>Kto cvičí:</span><label><input type="checkbox" id="ww-m" checked> Mama</label><label><input type="checkbox" id="ww-t" checked> Tato</label>
+    <button type="button" class="big go" id="wkGo">▶ Cvičíme</button></div>
+  <div class="qbox"><span>Rýchly zápis:</span><input type="date" id="qDate"><label><input type="checkbox" id="qw-m" checked> Mama</label><label><input type="checkbox" id="qw-t" checked> Tato</label>
+    <div class="qbtns"><button type="button" data-qa="sm">🧘 SM systém</button><button type="button" data-qa="pil">🤸 Pilates</button><button type="button" data-qa="hike">🥾 Turistika</button><button type="button" data-qa="swim">🏊 Plávanie</button><button type="button" data-qa="walk">🚶 Prechádzka</button><button type="button" data-qa="train">🏋️ Tréning (bez zápisu váh)</button></div></div>
+</div>
+
+<h2>Ako to funguje</h2>
+<div class="grid2">
+  <div class="box"><h3>Priebeh tréningu</h3><ul class="tight">
+    <li><b>1. Rozcvička</b> – 7 min, rovnaká pre všetkých.</li>
+    <li><b>2. Hlavná časť</b> – cviky <b>klasicky po sériách</b>: najprv všetky série jedného cviku (napr. 3 série × 10), potom ďalší cvik.</li>
+    <li>Kým jeden cvičí sériu, druhý oddychuje a kontroluje techniku podľa bodov „Pozor“. Potom sa vymeníte.</li>
+    <li>Pauza medzi sériami je pri každom cviku (45–90 s) – použite časovač dole.</li>
+    <li><b>3. Strečing</b> – 6 min na upokojenie.</li></ul></div>
+  <div class="box"><h3>Úrovne a obťiažnosť</h3><ul class="tight">
+    <li>Hore si mama aj tato nastavia <b>vlastnú úroveň 1–4</b> (1 = začiatok, 2 = mierne pokročilý, 3 = pokročilý, 4 = veľmi pokročilý – veľká činka na chrbte, ťažšie váhy, 4 série). Na úroveň 4 prejdite až keď úroveň 3 zvládate s rezervou aspoň 4 týždne a bez bolesti.</li>
+    <li>Ak je konkrétny cvik ťažký alebo ľahký, pri cviku stlačte <b>‹ Ľahšie</b> alebo <b>Ťažšie ›</b> – zmení sa aj ukážka.</li>
+    <li><b>Kedy pridať:</b> keď dva tréningy po sebe zvládnete všetky série a ešte by ste dali 2–3 opakovania navyše.</li>
+    <li>Tempo 2 s hore, 2–3 s dole, pri námahe výdych, nikdy nezadržiavať dych.</li></ul></div>
+</div>
+<div class="note" id="lvNote"></div>
+<div class="grid2">
+  <div class="box" style="border-left:5px solid var(--mama)"><h3 style="color:var(--mama)">Úpravy pre mamu (platnička)</h3><ul class="tight">
+    <li>Chrbát vždy neutrálny – žiadne krčenie chrbta so záťažou, žiadne brušáky ani predklony k špičkám.</li>
+    <li>Mŕtvy ťah a predklon: ľahké váhy, rozsah len bez bolesti.</li>
+    <li>Kolená k hrudníku a detskú pozíciu len ak sú príjemné, inak vynechať.</li>
+    <li>Najviac pomáhajú: vtáčik-pes, mŕtvy chrobák, plank, mostík, farmárska chôdza.</li></ul></div>
+  <div class="box" style="border-left:5px solid var(--tato)"><h3 style="color:var(--tato)">Úpravy pre tatu (bedrový kĺb)</h3><ul class="tight">
+    <li>Drepy a výpady do hĺbky, ktorá nebolí. Vo výpade kratší krok.</li>
+    <li>Kľúčové pre bedro: zdvih nohy v ľahu na boku, mostík a strečing flexora bedra.</li>
+    <li>Ak bedro v drepe pichá, drepujte na stoličku (verzia „Ľahšie“).</li>
+    <li>Na turistike z kopca pomôžu paličky.</li></ul></div>
+</div>
+<div class="note w"><b>3D ukážky:</b> postava stále predvádza cvik. Ak si ju chceš otočiť, <b>ťukni na ňu</b> a potom ťahaj prstom. Ďalším ťuknutím otáčanie vypneš – pri skrolovaní sa nič nehýbe.</div>
+
+<h2>Týždeň</h2>
+<div class="week">
+  <div class="day tr"><b>Po</b>Tréning</div><div class="day pl"><b>Ut</b>Pilates / SM</div><div class="day tr"><b>St</b>Tréning</div>
+  <div class="day"><b>Št</b>Svižná chôdza 30–45 min</div><div class="day tr"><b>Pi</b>Tréning<br><small>(1. a 2. týždeň voľno)</small></div>
+  <div class="day hk"><b>So</b>Turistika</div><div class="day"><b>Ne</b>Voľno</div>
+</div>
+<p class="sub" style="margin-top:8px">Varianty doma / domáca posilňovňa / fitnescentrum môžete ľubovoľne miešať (napr. Po fitko, St doma). Medzi tréningami aspoň 1 deň bez posilňovania.</p>
+<div class="note"><b>Vo fitnescentre:</b> pri prvej návšteve požiadajte trénera, nech vám nastaví sedadlá na strojoch – nastavenie (číslo dierky) si zapíšte. Závažia sa na rôznych strojoch líšia, uvedené kilá sú len orientačné: vyberte váhu, pri ktorej sú posledné 2 opakovania ťažké, ale technika ostáva čistá. Keď zvládnete všetky série s rezervou, pridajte jeden plát.</div>
+
+<div class="sect"><h2>1. Rozcvička</h2><span class="time">≈ 7 min</span></div>
+<div class="cards" id="warm"></div>
+<div class="sect"><h2 id="mainTitle">2. Hlavná časť</h2><span class="time" id="mainTime"></span></div>
+<div class="cards" id="main"></div>
+<div class="sect"><h2>3. Strečing</h2><span class="time">≈ 6 min</span></div>
+<div class="cards" id="cool"></div>
+
+<h2>Kondícia a chudnutie</h2>
+<div class="grid2">
+  <div class="box"><h3>Kondícia</h3><ul class="tight">
+    <li>Cieľ: aspoň <b>150 minút týždenne</b> svižného pohybu (turistika, chôdza, bicykel) – posilňovanie je navyše.</li>
+    <li>Správne tempo: <b>dá sa rozprávať, ale nie spievať</b>.</li>
+    <li>Denne 7–10 tisíc krokov, aj prechádzka po večeri pomáha.</li>
+    <li>Na turistike pridajte úseky do kopca svižnejšie (2 min rýchlo, 2 min pomaly).</li></ul></div>
+  <div class="box"><h3>Chudnutie</h3><ul class="tight">
+    <li>Váhu ovplyvní najmä <b>strava</b>, tréning udrží svaly a zrýchli metabolizmus.</li>
+    <li>Bielkoviny pri každom jedle (mäso, ryby, vajíčka, tvaroh, strukoviny), veľa zeleniny.</li>
+    <li>Menej sladených nápojov, sladkostí a alkoholu.</li>
+    <li>Rozumné tempo: okolo <b>0,5 kg týždenne</b>. Merajte aj obvod pása.</li></ul></div>
+</div>
+
+<h2>Bezpečnosť</h2>
+<div class="box"><p><b>Semafor bolesti</b> (počas cvičenia aj na druhý deň):</p><ul class="tight">
+  <li>🟢 <b>0–2 z 10</b> – v poriadku. Svalovica 1–2 dni po tréningu je normálna.</li>
+  <li>🟠 <b>3–4 z 10</b> – znížte váhu, rozsah alebo prepnite cvik na ľahšiu verziu.</li>
+  <li>🔴 <b>5 a viac</b>, ostrá alebo vystreľujúca bolesť, tŕpnutie, závrat, tlak na hrudi – <b>prestaňte</b> a poraďte sa s lekárom.</li></ul>
+  <p>Pri platničke, bedrovom kĺbe, vysokom tlaku či inej diagnóze ukážte plán najprv lekárovi alebo fyzioterapeutovi.</p></div>
+
+<h2 id="dennik">📖 Denník</h2><p class="sub">Ťukni na deň – zobrazia sa záznamy, dajú sa pridať aj zmazať.</p>
+<div class="cal" id="cal"></div>
+<h2>📈 Pokrok</h2><div id="charts"></div>
+<h2>🗓 Plán na 4 týždne</h2><div id="plan4"></div>
+<h2>☁ Ukladanie a záloha</h2><div class="syncbox" id="syncBox"></div>
+<p class="foot">3D postavy sú vytvorené z voľne použiteľných (CC0) modelov MakeHuman, upravené podľa fotiek. Odkazy na videá sú navyše (v angličtine). Plán je všeobecný a nenahrádza radu lekára ani fyzioterapeuta.</p>
+</div>
+<div class="wk" id="wk" hidden>
+  <div class="wktop"><button type="button" id="wkX" aria-label="Zavrieť">✕</button><div class="wkh" id="wkHead"></div><button type="button" id="wkVoice">🔊</button></div>
+  <div class="wkbar"><i id="wkProg"></i></div>
+  <div class="wkscroll"><div id="wkView"></div><div id="wkBody"></div></div>
+  <div class="wkfoot"><button type="button" id="wkBack">← Späť</button></div>
+  <div class="wktimer" id="wkTimer" hidden></div>
+</div>
+<div class="timer" id="timer"><span class="tv" id="tv">0:00</span><button data-s="45">45 s</button><button data-s="60">1 min</button><button data-s="90">1:30</button><button data-s="120">2 min</button><button class="stop" id="tstop">■</button></div>
+<script>
+/*__SCRIPTS__*/
+</script>
+</body>
+</html>

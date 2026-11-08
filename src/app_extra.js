@@ -24,15 +24,15 @@ const BRT={h1:'Nádych pri ceste dole, výdych pri vstávaní.',g1:'Nádych dole
  h7:'Výdych pri vystieraní ruky a nohy, nádych pri návrate.',h8:'Výdych pri vystieraní, nádych pri návrate – driek stále pri zemi.',h9:'Dýchaj plynulo, nezadržiavaj dych.',g9:'Dýchaj plynulo, brucho spevnené.',
  g2:'Nádych pri predklone, výdych pri vzpriamení.',f5:'Nádych pri predklone, výdych pri vzpriamení.',g8:'Výdych pri ťahu hore, nádych pri spúšťaní.',
  f1:'Výdych pri tlaku nohami, nádych pri pokrčení.',f2:'Výdych pri ťahu dole, nádych pri púšťaní hore.',f3:'Výdych pri tlaku, nádych pri návrate.',f4:'Výdych pri ťahu, nádych pri povolení.',
- f6:'Výdych pri pokrčení, nádych pri návrate.',f6b:'Výdych pri vystretí nôh, nádych pri spúšťaní.',f7:'Výdych pri roztiahnutí, nádych pri návrate.',f8:'Nádych pri predklone, výdych pri vzpriamení.',
- f9:'Výdych pri vytlačení rúk, nádych pri návrate.',f10:'Dýchaj tak, aby si vedel rozprávať.'};
+ f6:'Výdych pri pokrčení, nádych pri návrate.',f6b:'Výdych pri vystretí nôh, nádych pri spúšťaní.',f7:'Výdych pri roztláčaní kolien, nádych pri návrate.',f8:'Nádych pri predklone, výdych pri vzpriamení.',
+ f9:'Výdych pri vytlačení rúk, nádych pri návrate.',f10:'Dýchaj tak, aby sa ešte dalo rozprávať.'};
 function breathOf(ex,an,t){const b=BR[ex.id];if(b==null)return WARM.includes(ex)||COOL.includes(ex)?{k:'calm'}:null;if(b==='h'||b==='w')return {k:'calm'};
   const ph=phaseAt(an,t);const eff=b===1?ph.i%2===0:ph.i%2===1;return {k:ph.move?(eff?'out':'in'):'pause',eff,i:ph.i,move:ph.move};}
 const BRL={out:'⬆ Výdych – námaha',in:'⬇ Nádych',calm:'🫁 Dýchaj pokojne'};
 const BADZ={kneesIn:['knees'],round:['back','upper'],arch:['back'],sag:['core','back'],shrug:['upper','shoulders'],leanBack:['back','upper']};
 const BAD={h1:['kneesIn','kolená padajú dovnútra a päty sa dvíhajú'],g1:['kneesIn','kolená padajú dovnútra'],h5:['kneesIn','predné koleno padá dovnútra, trup sa hrbí'],g5:['kneesIn','predné koleno padá dovnútra'],f5b:['kneesIn','predné koleno padá dovnútra'],
  g2:['round','okrúhly chrbát – najčastejšia chyba, ktorá zaťažuje platničky'],f5:['round','okrúhly chrbát – zaťažuje platničky'],h4:['shrug','zhrbené plecia ťahané k ušiam'],g4:['round','okrúhly chrbát a ťahanie rukou namiesto lopatky'],f4:['round','hrbenie a kývanie trupom'],
- h3:['sag','prepadnuté boky a hlava dole'],h9:['sag','prepadnuté boky (prehnutý driek)'],h2:['arch','prehnutý driek – boky príliš vysoko'],g6:['arch','prehnutý driek namiesto stlačenia zadku'],f8:['arch','záklon za priamku – preťaženie driekov'],f2:['leanBack','zakláňanie a ťahanie trupom']};
+ h3:['sag','prepadnuté boky a hlava dole'],h9:['sag','prepadnuté boky (prehnutý driek)'],h2:['arch','prehnutý driek – boky príliš vysoko'],g6:['arch','prehnutý driek namiesto stlačenia zadku'],f8:['arch','záklon za priamku – preťaženie drieku'],f2:['leanBack','zakláňanie a ťahanie trupom']};
 /* --- muscle overlay --- */
 function musWeights(A,mesh,keys,col){col=col||[0.85,0.16,0.08];
   const ck=mesh.name+':'+keys.join(',')+':'+col.join(',');A._mw=A._mw||{};if(A._mw[ck])return A._mw[ck];

@@ -258,7 +258,7 @@ function renderSync(){const el=document.getElementById('syncBox');if(!el)return;
   ${SC.token?`<div class="row"><button type="button" id="sNow">⟳ Synchronizovať teraz</button><button type="button" id="sOff">Odpojiť</button></div>`:
   `<label>GitHub token <input id="sTok" type="password" autocomplete="off" placeholder="github_pat_…"></label><label>Repozitár <input id="sRepo" value="${SC.owner}/${SC.repo}"></label><div class="row"><button type="button" id="sOn">Pripojiť</button></div>`}
   <div class="row"><button type="button" id="sExp">⬇ Záloha (súbor)</button><label class="btn">⬆ Obnoviť zo súboru<input id="sImp" type="file" accept=".json" hidden></label></div>`;
-  setSync(document.getElementById('syncSt').textContent);try{renderPush();}catch(_){}}
+  setSync(document.getElementById('syncSt').textContent);try{renderPush();}catch(_){}try{renderVoice();}catch(_){}}
 document.addEventListener('click',async e=>{const id=e.target.id;
   if(id==='sOn'){const t=document.getElementById('sTok').value.trim(),r=document.getElementById('sRepo').value.trim().split('/');if(!t){alert('Vlož token.');return;}SC.token=t;if(r.length===2){SC.owner=r[0];SC.repo=r[1];}SC.dirty=true;saveSC();renderSync();await sync();}
   else if(id==='sOff'){if(confirm('Odpojiť? Záznamy ostanú v telefóne, len sa prestanú ukladať na GitHub.')){delete SC.token;saveSC();renderSync();}}

@@ -4,6 +4,10 @@
 const WHO2={m:'Mama',t:'Tato'};
 const ACT={train:{i:'🏋️',n:'Tréning'},sm:{i:'🧘',n:'SM systém'},pil:{i:'🤸',n:'Pilates'},hike:{i:'🥾',n:'Turistika'},swim:{i:'🏊',n:'Plávanie'},walk:{i:'🚶',n:'Prechádzka'}};
 const VARN={home:'doma',gym:'domáca posilňovňa',fit:'fitko'};
+const VARI={home:{i:'🏠',n:'Tréning doma'},gym:{i:'🏋️',n:'Domáca posilňovňa'},fit:{i:'🏢',n:'Fitnescentrum'}};
+const actI=x=>x.t==='train'&&VARI[x.var]?VARI[x.var].i:ACT[x.t].i,actN=x=>x.t==='train'&&VARI[x.var]?VARI[x.var].n:ACT[x.t].n;
+const qaBtns=ds=>Object.entries(VARI).map(([k,a])=>`<button type="button" data-qa="train" data-v="${k}"${ds?` data-d="${ds}"`:''}>${a.i} ${a.n}</button>`).join('')+
+  Object.entries(ACT).filter(([k])=>k!=='train').map(([k,a])=>`<button type="button" data-qa="${k}"${ds?` data-d="${ds}"`:''}>${a.i} ${a.n}</button>`).join('');
 const pad2=n=>String(n).padStart(2,'0');
 const dstr=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
 const today=()=>dstr(new Date());
@@ -93,9 +97,16 @@ function recFor(who,day){
   if(last&&p2(last)){R.easier=true;R.lines.push('⚠️ Po minulom tréningu bola výrazná bolesť – cviky na nohy a chrbát o verziu ľahšie, menší rozsah.');}
   else if(last&&p1(last))R.lines.push('ℹ️ Minule mierna bolesť – sledujte to; ak sa zhorší, zvoľte ľahšiu verziu.');
   if(lastTwo.length===2&&lastTwo.every(p2))R.lines.push('🩺 Výrazná bolesť dvakrát po sebe – pred ďalším posilňovaním sa poraďte s lekárom alebo fyzioterapeutom.');
+  {const since60=addDays(day,-60);const used=[...new Set(trains.filter(x=>x.d>=since60).map(x=>x.var||'home'))];
+   const l2=trains.slice(-2).map(x=>x.var||'home');
+   if(R.status==='go'&&used.length>=2&&l2.length===2&&l2[0]===l2[1]){
+     const others=used.filter(v=>v!==l2[0]);const lastOf=v=>{const t=trains.filter(x=>(x.var||'home')===v);return t.length?t[t.length-1].d:'';};
+     others.sort((a,b)=>lastOf(a)<lastOf(b)?-1:1);const nx=others[0];
+     R.alt=nx;R.lines.push(`🔄 Posledné 2 tréningy boli ${l2[0]==='home'?'doma':l2[0]==='gym'?'v domácej posilňovni':'vo fitku'} – ak sa dá, dnes skúste ${VARI[nx].i} ${nx==='home'?'tréning doma':nx==='gym'?'domácu posilňovňu':'fitnescentrum'}.`);}}
   // week summary + next day
   const need=Math.max(0,2-wcount);
-  R.week=`Tento týždeň: ${wcount}× posilňovanie`+(need?` (cieľ 2–3, chýba ešte ${need})`:' (cieľ 2–3 ✓)');
+  const wv={};trains.filter(x=>x.d>=wk).forEach(x=>{const v=x.var||'home';wv[v]=(wv[v]||0)+1;});
+  R.week=`Tento týždeň: ${wcount}× posilňovanie${vs(wv)}`+(need?` · cieľ 2–3, chýba ešte ${need}`:' · cieľ 2–3 ✓');
   if(R.status!=='go'){let n=addDays(day,1);if(last&&daysBetween(last.d,n)<2)n=addDays(last.d,2);if(todayTrain)n=addDays(day,2);R.next='Najbližší vhodný deň: '+fmtD(n);}
   // 4-week cycle
   const first=trains[0];R.wk=first?((Math.floor(daysBetween(first.d,day)/7))%4)+1:1;
@@ -137,6 +148,7 @@ function renderToday(){const el=document.getElementById('today');if(!el)return;
   el.innerHTML=['m','t'].map(w=>{const R=RECS[w];return `<div class="tdy ${w}"><h4>${WHO2[w]} <span class="st ${R.status}">${{go:'tréning',rest:'voľno',done:'hotovo'}[R.status]}</span></h4>${R.lines.map(l=>`<p>${l}</p>`).join('')}<p class="mute">${R.week}${R.next?' · '+R.next:''}</p><p class="mute">Cyklus: týždeň ${R.wk} zo 4${R.deload?' (ľahší týždeň)':''}</p>${R.lvlUp?`<p class="up">${R.lvlUp}</p>`:''}</div>`;}).join('');}
 const MES=['január','február','marec','apríl','máj','jún','júl','august','september','október','november','december'];
 let calYM=null,calSel=null;
+function vs(o){const k=Object.keys(VARI).filter(v=>o[v]);return k.length?' ('+k.map(v=>VARI[v].i+o[v]).join(' ')+')':'';}
 function renderCal(){const el=document.getElementById('cal');if(!el)return;const t=today();
   if(!calYM)calYM=t.slice(0,7);const [Y,M]=calYM.split('-').map(Number);
   const first=`${calYM}-01`;const last=dstr(new Date(Y,M,0));const start=monday(first);const end=addDays(monday(last),6);
@@ -144,14 +156,14 @@ function renderCal(){const el=document.getElementById('cal');if(!el)return;const
   let h=`<div class="calnav"><button type="button" class="cnb" data-cm="-1" aria-label="Predchádzajúci mesiac">‹</button><b>${MES[M-1]} ${Y}</b><button type="button" class="cnb" data-cm="1" aria-label="Ďalší mesiac">›</button></div>`+
     `<div class="caltd"><span>Dnes je <b>${fmtD(t)}${Y!==+t.slice(0,4)||!isCur?' '+t.slice(0,4):''}</b></span>${isCur?'':'<button type="button" class="cnt" data-cm="0">↩ Späť na dnes</button>'}</div>`;
   h+='<div class="calh">'+['Po','Ut','St','Št','Pi','So','Ne'].map(x=>`<span>${x}</span>`).join('')+'</div><div class="calg">';
-  const L=live();let nTr={m:0,t:0};
+  const L=live();let nTr={m:0,t:0},nV={m:{},t:{}};
   for(let ds=start;ds<=end;ds=addDays(ds,1)){const E=L.filter(x=>x.d===ds);const inM=ds.slice(0,7)===calYM;
-    if(inM)['m','t'].forEach(w=>{if(E.some(x=>x.who===w&&x.t==='train'))nTr[w]++;});
-    const ic=who=>[...new Set(E.filter(x=>x.who===who).map(x=>ACT[x.t].i))].join('');
+    if(inM)['m','t'].forEach(w=>{const tr=E.filter(x=>x.who===w&&x.t==='train');if(tr.length){nTr[w]++;const v=tr[tr.length-1].var||'home';nV[w][v]=(nV[w][v]||0)+1;}});
+    const ic=who=>[...new Set(E.filter(x=>x.who===who).map(actI))].join('');
     h+=`<button type="button" class="cd${ds===t?' tod':''}${ds>t?' fut':''}${inM?'':' out'}${ds===calSel?' sel':''}" data-d="${ds}"><i>${dparse(ds).getDate()}</i><b class="m">${ic('m')}</b><b class="t">${ic('t')}</b></button>`;}
   h+='</div>';
-  el.innerHTML=h+`<p class="mute calsum">${MES[M-1][0].toUpperCase()+MES[M-1].slice(1)}: tréningy – mama ${nTr.m}×, tato ${nTr.t}×</p>`+
-    '<div class="leg">'+Object.values(ACT).map(a=>a.i+' '+a.n).join(' · ')+' · <b class="m">■</b> mama <b class="t">■</b> tato</div><div id="dayList"></div>';
+  el.innerHTML=h+`<p class="mute calsum">${MES[M-1][0].toUpperCase()+MES[M-1].slice(1)}: tréningy – mama ${nTr.m}×${vs(nV.m)}, tato ${nTr.t}×${vs(nV.t)}</p>`+
+    '<div class="leg">'+Object.values(VARI).map(a=>a.i+' '+a.n).join(' · ')+' · '+Object.entries(ACT).filter(([k])=>k!=='train').map(([k,a])=>a.i+' '+a.n).join(' · ')+' · <b class="m">■</b> mama <b class="t">■</b> tato</div><div id="dayList"></div>';
   if(calSel&&calSel.slice(0,7)===calYM)showDay(calSel);}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-cm]');if(!b)return;const k=+b.dataset.cm;
   if(!k){calYM=today().slice(0,7);calSel=today();}else{const [Y,M]=calYM.split('-').map(Number);const d=new Date(Y,M-1+k,1);calYM=dstr(d).slice(0,7);}
@@ -168,14 +180,14 @@ function dayCheck(){const t=today();if(t===_lastDay)return;const was=_lastDay;_l
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)dayCheck();});setInterval(dayCheck,60000);
 document.addEventListener('click',e=>{const b=e.target.closest('.cd');if(!b)return;calSel=b.dataset.d;document.querySelectorAll('.cd.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');showDay(b.dataset.d);});
 function showDay(ds){const el=document.getElementById('dayList');if(!el)return;const E=live().filter(x=>x.d===ds);
-  el.innerHTML=`<h4>${fmtD(ds)}</h4>`+(E.length?E.map(x=>`<div class="dl ${x.who}"><span>${ACT[x.t].i} <b>${WHO2[x.who]}</b> – ${ACT[x.t].n}${x.var?' ('+VARN[x.var]+')':''}${x.ex?' · '+Object.keys(x.ex).length+' cvikov':''}${x.pain&&x.pain[x.who]?painTxt(x.pain[x.who]):''}</span><button type="button" data-del="${x.id}">✕</button></div>`).join(''):'<p class="mute">Žiadny záznam.</p>')+
-    `<div class="qadd">Pridať na tento deň: ${Object.entries(ACT).map(([k,a])=>`<button type="button" data-qa="${k}" data-d="${ds}">${a.i} ${a.n}</button>`).join('')}</div>`;}
+  el.innerHTML=`<h4>${fmtD(ds)}</h4>`+(E.length?E.map(x=>`<div class="dl ${x.who}"><span>${actI(x)} <b>${WHO2[x.who]}</b> – ${actN(x)}${x.ex?' · '+Object.keys(x.ex).length+' cvikov':''}${x.pain&&x.pain[x.who]?painTxt(x.pain[x.who]):''}</span><button type="button" data-del="${x.id}">✕</button></div>`).join(''):'<p class="mute">Žiadny záznam.</p>')+
+    `<div class="qadd">Pridať na tento deň: ${qaBtns(ds)}</div>`;}
 const painTxt=p=>{const n=['bez bolesti','mierna','výrazná'];return ` · chrbát: ${n[p.b||0]}, bedro: ${n[p.h||0]}`;};
 document.addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d){if(confirm('Zmazať tento záznam?')){delEntry(d.dataset.del);dbSave();refreshLog();build();const op=document.querySelector('#dayList h4');}return;}
   const q=e.target.closest('[data-qa]');if(q){const who=quickWho();if(!who.length){alert('Vyber mamu alebo tatu.');return;}
     const ds=q.dataset.d||document.getElementById('qDate').value||today();
-    if(q.dataset.qa==='train'){who.forEach(w=>addEntry({who:w,d:ds,t:'train',var:VAR,quick:1}));}else who.forEach(w=>addEntry({who:w,d:ds,t:q.dataset.qa}));
-    dbSave();refreshLog();build();showDay(ds);toast(ACT[q.dataset.qa].i+' Zapísané: '+who.map(w=>WHO2[w]).join(' a ')+' – '+ACT[q.dataset.qa].n+' ('+fmtD(ds)+')');}});
+    const qv=q.dataset.v||VAR;if(q.dataset.qa==='train'){who.forEach(w=>addEntry({who:w,d:ds,t:'train',var:qv,quick:1}));}else who.forEach(w=>addEntry({who:w,d:ds,t:q.dataset.qa}));
+    dbSave();refreshLog();build();showDay(ds);const qx={t:q.dataset.qa,var:qv};toast(actI(qx)+' Zapísané: '+who.map(w=>WHO2[w]).join(' a ')+' – '+actN(qx)+' ('+fmtD(ds)+')');}});
 function quickWho(){return ['m','t'].filter(w=>{const c=document.getElementById('qw-'+w);return !c||c.checked;});}
 function toast(t){let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';document.body.appendChild(el);}el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2600);}
 function renderCharts(){const el=document.getElementById('charts');if(!el)return;const all=[...HOME,...GYM,...FIT];const rows=[];

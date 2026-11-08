@@ -153,14 +153,15 @@ async function start(){
   initIO();build();requestAnimationFrame(frame);
   try{
     const ls=src=>new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=src;sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});
-    if(!window.DecompressionStream) throw new Error('no3d');
-    if(!window.THREE) await ls('https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js');
-    if(!window.AV_DATA) await ls('avatars.js');
-    if(!window.THREE||!window.AV_DATA) throw new Error('no3d');
+    const ls2=async(a,b)=>{try{await ls(a);}catch(e){await ls(b);}};
+    if(!window.DecompressionStream&&!window.fflate) await ls2('https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js','https://unpkg.com/fflate@0.8.2/umd/index.js');
+    if(!window.THREE) await ls2('https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js','https://unpkg.com/three@0.149.0/build/three.min.js');
+    if(!window.AV_DATA) await ls('avatars.js?v=2');
+    if(!window.THREE||!window.AV_DATA) throw new Error('chýba knižnica 3D');
     GLR=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
     GLR.setPixelRatio(1);GLR.outputEncoding=THREE.sRGBEncoding;GLR.shadowMap.enabled=true;GLR.shadowMap.type=THREE.PCFSoftShadowMap;GLR.setClearColor(0x000000,0);GLR.autoClear=false;
     initLook(GLR);
     GLok=true;
     await loadAvatars();AVready=true;
-  }catch(e){console.warn('3D fallback',e);GLok=false;document.body.classList.add('no3d');}
+  }catch(e){console.warn('3D fallback',e);GLok=false;document.body.classList.add('no3d');try{const n=document.createElement('div');n.className='no3dmsg';n.textContent='3D postavy sa nepodarilo načítať ('+(e&&e.message||e&&e.type||e)+') – zobrazujú sa zjednodušené. Skús obnoviť stránku alebo iný prehliadač (Chrome).';document.body.prepend(n);}catch(_){}}
 }

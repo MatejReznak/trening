@@ -7,7 +7,7 @@ const to3=(p,z)=>v3((p[0]-100)/U60,(FLY-p[1])/U60,z||0);
 const to2=(v)=>[100+v.x*U60,FLY-v.y*U60];
 
 function b64bytes(s){const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
-async function gunzip(u8){const ds=new DecompressionStream('gzip');return await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer();}
+async function gunzip(u8){if(!window.DecompressionStream){const o=fflate.gunzipSync(u8);return o.buffer.slice(o.byteOffset,o.byteOffset+o.byteLength);}const ds=new DecompressionStream('gzip');return await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer();}
 const TA={float32:Float32Array,int8:Int8Array,uint8:Uint8Array,uint16:Uint16Array,uint32:Uint32Array};
 
 async function loadAvatars(){

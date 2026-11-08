@@ -1,5 +1,5 @@
 // Offline cache pre tréningový plán. Denník (api.github.com) sa nikdy necachuje.
-const C='trening-v2';
+const C='trening-v3';
 const CORE=['./','index.html','avatars.js','manifest.json','icon-192.png','icon-512.png','icon-180.png',
  'https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>Promise.all(CORE.map(u=>c.add(new Request(u,{mode:u.startsWith('http')?'no-cors':'same-origin'})).catch(()=>{})))).then(()=>self.skipWaiting()));});

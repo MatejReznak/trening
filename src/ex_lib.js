@@ -33,10 +33,10 @@ const ANIM={
    return {k:[s,mix(s,{x:hip[0],y:hip[1],t:31,h:-10,na:{a:[86,86],sp:1.5},fa:{a:[86,86],sp:1.5}})],dur:1500,hold:450};},
  squatPause:L=>{const a=ANIM.squat(L);a.holds=[500,2200];return a;},
  gobletBox:L=>{const FY=FYa(L);const {hip}=hipFromFoot(L,[101.5,FY],-22,74);
-   const top=hip[1]+L.hipBack*0.95;const a=gob(L,standP(L),0),b=gob(L,mix(standP(L),{x:hip[0],y:hip[1],t:30,h:-6}),0);
+   const top=hip[1]+L.hipBack*0.95;const a=gob(L,standP(L),0),b=gob(L,mix(standP(L),{x:hip[0],y:hip[1],t:30,h:2}),0);
    return {k:[a,b],dur:1600,hold:450,props:[['chair',{x0:hip[0]-13,x1:hip[0]+7,top}]],dyn:'goblet',curl:{all:.45},hand:{all:'cup'}};},
  goblet:L=>{const FY=FYa(L);const {hip}=hipFromFoot(L,[101.5,FY],-32,86);
-   return {k:[gob(L,standP(L),0),gob(L,mix(standP(L),{x:hip[0],y:hip[1],t:26,h:-6}),0)],dur:1600,hold:450,dyn:'goblet',curl:{all:.45},hand:{all:'cup'}};},
+   return {k:[gob(L,standP(L),0),gob(L,mix(standP(L),{x:hip[0],y:hip[1],t:26,h:2}),0)],dur:1600,hold:450,dyn:'goblet',curl:{all:.45},hand:{all:'cup'}};},
  gobletPause:L=>{const a=ANIM.goblet(L);a.holds=[500,2200];return a;},
  /* bridges */
  bridge:L=>{const FY=FYa(L),x0=94;const feet=[x0+L.TH*1.3,FY];const b0=bridgeSet(L,0,x0),b1=bridgeSet(L,L.TH*0.62,x0);
@@ -115,8 +115,8 @@ const ANIM={
  plankLeg:L=>{const a=ANIM.plankToes(L);const p=a.k[0];const th=angOf([30-p.x,FL-6.8-p.y]);
    return Object.assign(a,{k:[p,mix(p,{nl:{a:[th-12,th-12]}}),p,mix(p,{fl:{a:[th-12,th-12]}})],dur:1000,hold:700});},
  /* RDL */
- rdl:(L,deep,bar)=>{const FY=FYa(L);const s=standP(L,{na:{a:[0,0],sp:bar?0.6:1.2},fa:{a:[0,0],sp:bar?0.6:1.2}});
-   const b=mix(s,{x:100-(deep?0.3:0.19)*L.LEG,y:FY-L.LEG*(deep?0.925:0.955),t:deep?70:46,h:deep?8:4,nl:{to:[103,FY]},fl:{to:[100,FY]}});
+ rdl:(L,deep,bar)=>{const FY=FYa(L);const R0=[13,14],R1=[14,16],SP=bar?0.6:-3.4;const s=standP(L,{na:{a:R0,sp:SP},fa:{a:R0,sp:SP}});
+   const b=mix(s,{x:100-(deep?0.3:0.19)*L.LEG,y:FY-L.LEG*(deep?0.925:0.955),t:deep?70:46,h:deep?8:4,nl:{to:[103,FY]},fl:{to:[100,FY]},na:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SP},fa:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SP}});
    return {k:[s,b],dur:1700,hold:450,hand:{all:'pron'},curl:{all:1},dyn:bar?'barbell':'db2'};},
  /* presses */
  floorPress:L=>{const FY=FYa(L);const x0=95;const p=supP(L,{x:x0,nl:{to:[x0+L.TH*1.25,FY],b:-1},fl:{to:[x0+L.TH*1.23,FY],b:-1}});
@@ -166,9 +166,9 @@ const ANIM={
    const b=mix(a,{x:70,y:hy+1,t:96,c:3,h:12});const sb=shOf(L,b);b.na={to:[sb[0]+L.ARM*0.93,FL-L.handT],b:1,sp:1};b.fa=b.na;
    return {k:[a,b],dur:2200,hold:1100,hand:{all:'floor'}};},
 };
-function gob(L,p,o){const sh=shOf(L,p);const u=[Math.sin(dg(p.t)),-Math.cos(dg(p.t))],f=[Math.cos(dg(p.t)),Math.sin(dg(p.t))];
-  const h=[sh[0]+f[0]*0.5*L.UA-u[0]*0.55*L.UA,sh[1]+f[1]*0.5*L.UA-u[1]*0.55*L.UA];
-  return Object.assign(JSON.parse(JSON.stringify(p)),{na:{to:h,b:1,sp:-(L.shW-3.2),spE:-L.shW*0.35},fa:{to:h,b:1,sp:-(L.shW-3.2),spE:-L.shW*0.35}});}
+function gob(L,p,o){const G=[12,140],t=p.t||0,SE=0.15;
+  const arm={a:[G[0]+t*0.75,G[1]+t*-0.5],sp:-(L.shW-2.6),spE:-L.shW*SE};
+  return Object.assign(JSON.parse(JSON.stringify(p)),{na:arm,fa:JSON.parse(JSON.stringify(arm))});}
 
 /* ===== fitness-centre machines ===== */
 function seatP(L,seatTop,hipX,t,o){const hy=seatTop-L.hipBack*0.92;return Object.assign({x:hipX,y:hy,t,c:0,h:-t*0.75},o||{});}

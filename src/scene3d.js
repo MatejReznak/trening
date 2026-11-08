@@ -130,7 +130,7 @@ function updateDyn(D,inst){
   else if(t==='db1'){orientY(o[0],gripOf(inst,'R'),palmAxis(inst,'R'));}
   else if(t==='goblet'){const a=palmOf(inst,'R'),b=palmOf(inst,'L');const c=a.clone().lerp(b,.5);
     const fw=boneWorld(inst,'spine01',inst.A.lm.shC.clone().add(v3(0.2,0,0))).sub(boneWorld(inst,'spine01',inst.A.lm.shC));fw.y=0;fw.normalize();
-    orientY(o[0],c.addScaledVector(fw,0.012).add(v3(0,0.075,0)),v3(0,1,0));}
+    orientY(o[0],c.addScaledVector(fw,0.022).add(v3(0,-0.055,0)),v3(0,1,0));}
   else if(t==='barbellBack'){const a=gripOf(inst,'R'),b=gripOf(inst,'L');const n=boneWorld(inst,'neck01',inst.A.B['neck01'].h);const c=a.clone().lerp(b,.5);c.y=Math.max(c.y,n.y-0.06);c.addScaledVector(v3(1,0,0).applyQuaternion(inst.bones[inst.A.B["spine01"].i].quaternion).setY(0).normalize(),-0.025);const ax=a.clone().sub(b);ax.y=0;orientY(o[0],c,ax.lengthSq()>1e-6?ax:v3(0,0,1));}
   else if(t==='barbell'){const a=gripOf(inst,'R'),b=gripOf(inst,'L');const c=a.clone().lerp(b,.5);orientY(o[0],c,a.clone().sub(b));}
   else if(t==='hipdb'){const p=boneWorld(inst,'pelvis',inst.A.lm.hipC.clone().add(v3(0.12,0.06,0)));orientY(o[0],p,v3(0,0,1));}

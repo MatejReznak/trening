@@ -123,7 +123,7 @@ const FIT=[
   warn:'Tato: kľúčový cvik pre bedrový kĺb – plynulo a v bezbolestnom rozsahu.',vid:'https://www.strengthlog.com/hip-abduction-machine/'},
  {id:'f8',n:'Vzpriamovanie trupu na lavici 45°',rest:60,v:[V('Malý rozsah',L=>ANIM.backExt(L,false),{note:'Klesaj len kúsok, kým je chrbát rovný.'}),V('Plný rozsah',L=>ANIM.backExt(L,true))],
   lv:{m:[0,0,0,0],t:[0,1,1,1]},dose:{m:[[2,'10'],[3,'10'],[3,'12']],t:[[2,'10'],[3,'12'],[3,'12','s kotúčom 5 kg na hrudi']]},
-  how:['Opierku nastav pod bedrové kosti, päty pod valcami.','Ruky prekríž na hrudi, ohni sa v bokoch s rovným chrbtom.','Vráť sa stlačením zadku len do priamky s nohami.'],
+  how:['Opierku nastav pod bedrové kosti, päty pod valcami.','Ruky drž pri hrudi, ohni sa v bokoch s rovným chrbtom.','Vráť sa stlačením zadku len do priamky s nohami.'],
   warn:'Nikdy nie za priamku (žiadne prehnutie). Mama: len malý rozsah; ak cíti platničku, vynechá a urobí vtáčika – psa.',vid:'https://us.physitrack.com/home-exercise-video/45-degree-back-extension'},
  {id:'f9',n:'Pallof press na kladke',rest:45,v:[V('V kľaku',L=>ANIM.pallof(L,true)),V('V stoji',L=>ANIM.pallof(L,false))],
   lv:{m:[0,1,1,1],t:[0,1,1,1]},dose:{m:[[2,'8 na stranu','5 kg'],[3,'10 na stranu','5–7,5 kg'],[3,'10 na stranu','7,5–10 kg']],t:[[2,'8 na stranu','7,5 kg'],[3,'10 na stranu','10 kg'],[3,'10 na stranu','12,5–15 kg']]},

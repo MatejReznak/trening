@@ -35,6 +35,7 @@ async function loadAvatars(){
 }
 function loadImg(src){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=src;});}
 async function loadAvTextures(t){
+  if(!t.detail){const o={};for(const k in t){const tx=new THREE.Texture(await loadImg(t[k]));tx.encoding=THREE.sRGBEncoding;tx.anisotropy=4;tx.needsUpdate=true;o[k]=tx;}return o;}
   const det=await loadImg(t.detail), mk=await loadImg(t.mask);
   const dt=new THREE.Texture(det);dt.encoding=THREE.sRGBEncoding;dt.anisotropy=4;dt.needsUpdate=true;
   const c=document.createElement('canvas');c.width=mk.width;c.height=mk.height;const g=c.getContext('2d');g.drawImage(mk,0,0);
@@ -50,7 +51,7 @@ function prepAvatar(who,h,meshes){
   const B={};h.bones.forEach((b,i)=>B[b.n]={i,h:v3(...b.h),t:v3(...b.t)});
   const lm={};for(const k in h.lm) lm[k]=v3(...h.lm[k]);
   const names=h.bones.map(b=>b.n);
-  armReweight(B,meshes);
+  if(h.kind!=='avaturn')armReweight(B,meshes);
   if(who==='m')smoothChest(meshes,v3(...h.lm.shC));
   const hipC=lm.hipC.clone(), shC=lm.shC.clone();
   const Tv=shC.clone().sub(hipC), Tlen=Tv.length(), up=Tv.clone().normalize();
@@ -87,7 +88,7 @@ function prepAvatar(who,h,meshes){
   const foot={},shoe={};
   const skin=meshes.find(m=>m.name==='skin');
   const shm=meshes.find(m=>m.name==='shoes');
-  for(const s of ['L','R']) shoe[s]=buildShoeData(who,s,B,shm);
+  for(const s of ['L','R']){shoe[s]=buildShoeData(who,s,B,shm);if(h.kind==='avaturn')shoe[s].real=realShoe(shm,s,shoe[s]);}
   for(const s of ['L','R']){const A=B['foot.'+s].h,sd=shoe[s];
     foot[s]={toe:v3(sd.tx-A.x,sd.soleY-A.y,0),heel:v3(sd.hx-A.x,sd.soleY-A.y,0),ball:v3(sd.xb-A.x,sd.soleY-A.y,0),t1:v3(sd.top1[0]-A.x,sd.top1[1]-A.y,0),t2:v3(sd.top2[0]-A.x,sd.top2[1]-A.y,0),t3:v3(sd.top3[0]-A.x,sd.top3[1]-A.y,0)};}
   // sample vertices for ground snapping (every 5th of every mesh)
@@ -154,6 +155,9 @@ function hairUp(m){m.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.re
 function avatarMats(A){
   if(A.mats) return A.mats;
   const M=avMats(),T=A.tex;
+  if(A.h.kind==='avaturn'){const S=(o)=>new THREE.MeshStandardMaterial(Object.assign({roughness:.8,metalness:0},o));const col=c=>new THREE.Color(c).convertSRGBToLinear();
+    A.mats={a_body:skinUp(S({map:T.body,roughness:.58,normalMap:microN(),normalScale:new THREE.Vector2(.12,.12)})),a_top:S({map:T.top,color:col(A.h.topColor||0x3f78cf),roughness:.9,side:THREE.DoubleSide}),
+      a_bottom:S({map:T.bottom,color:col(A.h.bottomColor||0xffffff),roughness:.85,side:THREE.DoubleSide}),a_shoe:S({map:T.shoes,roughness:.7})};return A.mats;}
   const cl=(m,o)=>{const n=m.clone();Object.assign(n,o);n.needsUpdate=true;return n;};
   A.mats={
     skin:skinUp(cl(M.skin,{map:T.detail,vertexColors:false,normalMap:microN(),normalScale:new THREE.Vector2(.18,.18)})),
@@ -541,18 +545,25 @@ function buildShoeData(who,s,B,skin){
   for(let i=0;i<tw.length;i++){const t=Math.max(0,Math.min(1,(pos[3*i]-(xb-0.012))/0.026));tw[i]=t*t*(3-2*t);}
   return {pos:new Float32Array(pos),col:new Float32Array(col),idx,tw,xb,top1,top2,top3,hx:hx-0.0105,tx:tx+0.010,soleY};
 }
+/* topánky z naskenovaného avatara: skutočná sieť, ohyb v špičke ako pri kreslených teniskách */
+function realShoe(shm,s,sd){const P=shm.pos,g=shm.geo,UV=g.attributes.uv,NR=g.attributes.normal,IX=g.index.array;const map=new Map(),pos=[],uv=[],nrm=[],idx=[];
+  const side=i=>(P[3*i+2]>0)===(s==='R');
+  for(let t=0;t<IX.length;t+=3){const a=IX[t],b=IX[t+1],c=IX[t+2];if(!(side(a)&&side(b)&&side(c)))continue;
+    [a,b,c].forEach(v=>{if(!map.has(v)){map.set(v,pos.length/3);pos.push(P[3*v],P[3*v+1],P[3*v+2]);uv.push(UV.getX(v),UV.getY(v));nrm.push(NR.getX(v),NR.getY(v),NR.getZ(v));}idx.push(map.get(v));});}
+  const tw=new Float32Array(pos.length/3);for(let i=0;i<tw.length;i++){const t=Math.max(0,Math.min(1,(pos[3*i]-(sd.xb-0.012))/0.026));tw[i]=t*t*(3-2*t);}
+  return {pos:new Float32Array(pos),uv:new Float32Array(uv),nrm:new Float32Array(nrm),idx,tw};}
 function buildShoes(inst){
   const A=inst.A;const M=avMats();
   if(!M.sneaker){M.sneaker=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72,metalness:0,side:THREE.DoubleSide});}
   inst.shoe={};
   for(const s of ['L','R']){const sd=A.shoe[s],H=A.B['foot.'+s].h;
-    if(!sd.geo){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(sd.pos,3));g.setAttribute('color',new THREE.BufferAttribute(sd.col,3));
-      const n=sd.tw.length,si=new Uint16Array(4*n),sw=new Float32Array(4*n);for(let i=0;i<n;i++){si[4*i+1]=1;sw[4*i]=1-sd.tw[i];sw[4*i+1]=sd.tw[i];}
+    if(!sd.geo){const R=sd.real,g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(R?R.pos:sd.pos,3));if(R){g.setAttribute('uv',new THREE.BufferAttribute(R.uv,2));g.setAttribute('normal',new THREE.BufferAttribute(R.nrm,3));}else g.setAttribute('color',new THREE.BufferAttribute(sd.col,3));
+      const TW=R?R.tw:sd.tw;const n=TW.length,si=new Uint16Array(4*n),sw=new Float32Array(4*n);for(let i=0;i<n;i++){si[4*i+1]=1;sw[4*i]=1-TW[i];sw[4*i+1]=TW[i];}
       g.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));
-      g.setIndex(sd.idx);g.computeVertexNormals();g.computeBoundingSphere();sd.geo=g;}
+      g.setIndex(R?R.idx:sd.idx);if(!R)g.computeVertexNormals();g.computeBoundingSphere();sd.geo=g;}
     const fb=new THREE.Bone(),tb=new THREE.Bone();fb.position.copy(H);fb.add(tb);tb.position.set(sd.xb-H.x,sd.soleY-H.y,0);inst.g.add(fb);
     inst.g.updateMatrixWorld(true);
-    const m=new THREE.SkinnedMesh(sd.geo,M.sneaker);m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;inst.g.add(m);
+    const m=new THREE.SkinnedMesh(sd.geo,sd.real?avatarMats(A).a_shoe:M.sneaker);m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;inst.g.add(m);
     m.bind(new THREE.Skeleton([fb,tb]),new THREE.Matrix4());
     inst.shoe[s]={fb,tb,m};}
 }

@@ -379,6 +379,7 @@ async function loadAvatars(){
 }
 function loadImg(src){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=src;});}
 async function loadAvTextures(t){
+  if(!t.detail){const o={};for(const k in t){const tx=new THREE.Texture(await loadImg(t[k]));tx.encoding=THREE.sRGBEncoding;tx.anisotropy=4;tx.needsUpdate=true;o[k]=tx;}return o;}
   const det=await loadImg(t.detail), mk=await loadImg(t.mask);
   const dt=new THREE.Texture(det);dt.encoding=THREE.sRGBEncoding;dt.anisotropy=4;dt.needsUpdate=true;
   const c=document.createElement('canvas');c.width=mk.width;c.height=mk.height;const g=c.getContext('2d');g.drawImage(mk,0,0);
@@ -394,7 +395,7 @@ function prepAvatar(who,h,meshes){
   const B={};h.bones.forEach((b,i)=>B[b.n]={i,h:v3(...b.h),t:v3(...b.t)});
   const lm={};for(const k in h.lm) lm[k]=v3(...h.lm[k]);
   const names=h.bones.map(b=>b.n);
-  armReweight(B,meshes);
+  if(h.kind!=='avaturn')armReweight(B,meshes);
   if(who==='m')smoothChest(meshes,v3(...h.lm.shC));
   const hipC=lm.hipC.clone(), shC=lm.shC.clone();
   const Tv=shC.clone().sub(hipC), Tlen=Tv.length(), up=Tv.clone().normalize();
@@ -431,7 +432,7 @@ function prepAvatar(who,h,meshes){
   const foot={},shoe={};
   const skin=meshes.find(m=>m.name==='skin');
   const shm=meshes.find(m=>m.name==='shoes');
-  for(const s of ['L','R']) shoe[s]=buildShoeData(who,s,B,shm);
+  for(const s of ['L','R']){shoe[s]=buildShoeData(who,s,B,shm);if(h.kind==='avaturn')shoe[s].real=realShoe(shm,s,shoe[s]);}
   for(const s of ['L','R']){const A=B['foot.'+s].h,sd=shoe[s];
     foot[s]={toe:v3(sd.tx-A.x,sd.soleY-A.y,0),heel:v3(sd.hx-A.x,sd.soleY-A.y,0),ball:v3(sd.xb-A.x,sd.soleY-A.y,0),t1:v3(sd.top1[0]-A.x,sd.top1[1]-A.y,0),t2:v3(sd.top2[0]-A.x,sd.top2[1]-A.y,0),t3:v3(sd.top3[0]-A.x,sd.top3[1]-A.y,0)};}
   // sample vertices for ground snapping (every 5th of every mesh)
@@ -498,6 +499,9 @@ function hairUp(m){m.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.re
 function avatarMats(A){
   if(A.mats) return A.mats;
   const M=avMats(),T=A.tex;
+  if(A.h.kind==='avaturn'){const S=(o)=>new THREE.MeshStandardMaterial(Object.assign({roughness:.8,metalness:0},o));const col=c=>new THREE.Color(c).convertSRGBToLinear();
+    A.mats={a_body:skinUp(S({map:T.body,roughness:.58,normalMap:microN(),normalScale:new THREE.Vector2(.12,.12)})),a_top:S({map:T.top,color:col(A.h.topColor||0x3f78cf),roughness:.9,side:THREE.DoubleSide}),
+      a_bottom:S({map:T.bottom,color:col(A.h.bottomColor||0xffffff),roughness:.85,side:THREE.DoubleSide}),a_shoe:S({map:T.shoes,roughness:.7})};return A.mats;}
   const cl=(m,o)=>{const n=m.clone();Object.assign(n,o);n.needsUpdate=true;return n;};
   A.mats={
     skin:skinUp(cl(M.skin,{map:T.detail,vertexColors:false,normalMap:microN(),normalScale:new THREE.Vector2(.18,.18)})),
@@ -885,18 +889,25 @@ function buildShoeData(who,s,B,skin){
   for(let i=0;i<tw.length;i++){const t=Math.max(0,Math.min(1,(pos[3*i]-(xb-0.012))/0.026));tw[i]=t*t*(3-2*t);}
   return {pos:new Float32Array(pos),col:new Float32Array(col),idx,tw,xb,top1,top2,top3,hx:hx-0.0105,tx:tx+0.010,soleY};
 }
+/* topánky z naskenovaného avatara: skutočná sieť, ohyb v špičke ako pri kreslených teniskách */
+function realShoe(shm,s,sd){const P=shm.pos,g=shm.geo,UV=g.attributes.uv,NR=g.attributes.normal,IX=g.index.array;const map=new Map(),pos=[],uv=[],nrm=[],idx=[];
+  const side=i=>(P[3*i+2]>0)===(s==='R');
+  for(let t=0;t<IX.length;t+=3){const a=IX[t],b=IX[t+1],c=IX[t+2];if(!(side(a)&&side(b)&&side(c)))continue;
+    [a,b,c].forEach(v=>{if(!map.has(v)){map.set(v,pos.length/3);pos.push(P[3*v],P[3*v+1],P[3*v+2]);uv.push(UV.getX(v),UV.getY(v));nrm.push(NR.getX(v),NR.getY(v),NR.getZ(v));}idx.push(map.get(v));});}
+  const tw=new Float32Array(pos.length/3);for(let i=0;i<tw.length;i++){const t=Math.max(0,Math.min(1,(pos[3*i]-(sd.xb-0.012))/0.026));tw[i]=t*t*(3-2*t);}
+  return {pos:new Float32Array(pos),uv:new Float32Array(uv),nrm:new Float32Array(nrm),idx,tw};}
 function buildShoes(inst){
   const A=inst.A;const M=avMats();
   if(!M.sneaker){M.sneaker=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72,metalness:0,side:THREE.DoubleSide});}
   inst.shoe={};
   for(const s of ['L','R']){const sd=A.shoe[s],H=A.B['foot.'+s].h;
-    if(!sd.geo){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(sd.pos,3));g.setAttribute('color',new THREE.BufferAttribute(sd.col,3));
-      const n=sd.tw.length,si=new Uint16Array(4*n),sw=new Float32Array(4*n);for(let i=0;i<n;i++){si[4*i+1]=1;sw[4*i]=1-sd.tw[i];sw[4*i+1]=sd.tw[i];}
+    if(!sd.geo){const R=sd.real,g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(R?R.pos:sd.pos,3));if(R){g.setAttribute('uv',new THREE.BufferAttribute(R.uv,2));g.setAttribute('normal',new THREE.BufferAttribute(R.nrm,3));}else g.setAttribute('color',new THREE.BufferAttribute(sd.col,3));
+      const TW=R?R.tw:sd.tw;const n=TW.length,si=new Uint16Array(4*n),sw=new Float32Array(4*n);for(let i=0;i<n;i++){si[4*i+1]=1;sw[4*i]=1-TW[i];sw[4*i+1]=TW[i];}
       g.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));
-      g.setIndex(sd.idx);g.computeVertexNormals();g.computeBoundingSphere();sd.geo=g;}
+      g.setIndex(R?R.idx:sd.idx);if(!R)g.computeVertexNormals();g.computeBoundingSphere();sd.geo=g;}
     const fb=new THREE.Bone(),tb=new THREE.Bone();fb.position.copy(H);fb.add(tb);tb.position.set(sd.xb-H.x,sd.soleY-H.y,0);inst.g.add(fb);
     inst.g.updateMatrixWorld(true);
-    const m=new THREE.SkinnedMesh(sd.geo,M.sneaker);m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;inst.g.add(m);
+    const m=new THREE.SkinnedMesh(sd.geo,sd.real?avatarMats(A).a_shoe:M.sneaker);m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;inst.g.add(m);
     m.bind(new THREE.Skeleton([fb,tb]),new THREE.Matrix4());
     inst.shoe[s]={fb,tb,m};}
 }
@@ -984,7 +995,7 @@ const ANIM={
  catCow:L=>{const q=quadP(L);return {k:[mix(q,{c:9,h:48}),mix(q,{c:-7,h:-28})],dur:1700,hold:450,hand:{all:'floor'}};},
  hinge:L=>{const s=standP(L,{na:{a:[1,1],sp:1.2},fa:{a:[1,1],sp:1.2}});const FY=FYa(L);return {k:[s,mix(s,{x:100-0.27*L.LEG,y:FY-L.LEG*0.93,t:68,h:6})],dur:1600,hold:400};},
  lungeArms:L=>{const FY=FYa(L);const a={x:98,y:FY-L.LEG*0.965,t:0,c:0,h:0,nl:{to:[115,FY]},fl:{to:[81,FY-1.5]},na:{a:[2,3],sp:1.5},fa:{a:[-2,-1],sp:1.5}};
-   const b=mix(a,{x:95,y:FY-L.LEG*0.66,t:-6,nl:{to:[117,FY]},fl:{to:[70,FY-4.5]},na:{a:[172,172],sp:1},fa:{a:[172,172],sp:1}});return {k:[a,b],dur:1600,hold:600};},
+   const b=mix(a,{x:95,y:FY-L.LEG*0.66,t:-6,nl:{to:[115,FY]},fl:{to:[82.2,FY-4.2]},na:{a:[172,172],sp:1},fa:{a:[172,172],sp:1}});return {k:[a,b],dur:1600,hold:600};},
  /* squats */
  chairSquat:L=>{const FY=FYa(L);const s=standP(L,{na:{a:[10,12],sp:1.5},fa:{a:[8,10],sp:1.5}});const {hip}=hipFromFoot(L,[101.5,FY],-21,73);
    const b=mix(s,{x:hip[0],y:hip[1],t:36,h:-8,na:{a:[82,84],sp:1.5},fa:{a:[82,84],sp:1.5}});const top=hip[1]+L.hipBack*0.95;
@@ -1076,7 +1087,7 @@ const ANIM={
    return Object.assign(a,{k:[p,mix(p,{nl:{a:[th-12,th-12]}}),p,mix(p,{fl:{a:[th-12,th-12]}})],dur:1000,hold:700});},
  /* RDL */
  rdl:(L,deep,bar)=>{const FY=FYa(L);const R0=[13,14],R1=[14,16],SP=bar?0.6:-2.3,SPB=bar?0.6:-0.6;const s=standP(L,{na:{a:R0,sp:SP},fa:{a:R0,sp:SP}});
-   const b=mix(s,{x:100-(deep?0.3:0.19)*L.LEG,y:FY-L.LEG*(deep?0.925:0.955),t:deep?70:46,h:deep?8:4,nl:{to:[103,FY]},fl:{to:[100,FY]},na:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SPB},fa:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SPB}});
+   const b=mix(s,{x:100-(deep?0.3:0.19)*L.LEG,y:FY-L.LEG*(deep?0.925:0.955),t:deep?70:46,h:deep?8:4,nl:{to:[101.5,FY]},fl:{to:[98.5,FY]},na:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SPB},fa:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SPB}});
    return {k:[s,b],dur:1700,hold:450,hand:{all:'pron'},curl:{all:1},dyn:bar?'barbell':'db2'};},
  /* presses */
  floorPress:L=>{const FY=FYa(L);const x0=95;const p=supP(L,{x:x0,nl:{to:[x0+L.TH*1.25,FY],b:-1},fl:{to:[x0+L.TH*1.23,FY],b:-1}});
@@ -1169,7 +1180,7 @@ Object.assign(ANIM,{
  backExt:(L,full)=>{const ank=[72,FL-0.44*U60];const c=Math.SQRT1_2;const hip=[ank[0]+L.LEG*c,ank[1]-L.LEG*c];
    const arms={na:{a:[150,-150],sp:-4,spE:1},fa:{a:[150,-150],sp:-4,spE:1}};
    const up={x:hip[0],y:hip[1],t:45,c:0,h:0,nl:{a:[-45,-45],sp:1},fl:{a:[-45,-45],sp:1}};
-   const arm=t=>({na:{a:[t+100,t-130],sp:-3.5,spE:2},fa:{a:[t+100,t-130],sp:-3.5,spE:2}});
+   const arm=t=>({na:{a:[26-t,152-t],sp:-2.5,spE:1},fa:{a:[22-t,146-t],sp:-2.5,spE:1}});
    const a=Object.assign({},up,arm(45)),b=Object.assign(mix(up,{t:full?125:100,c:full?5:2,h:-20}),arm(full?125:100));
    return {k:[a,b],dur:1700,hold:500,curl:{all:.6},ground:false,footN:[c,c],footOff:(X3(ank[0])*c+Y3(ank[1])*c)-L.ankleH*0.95/U60,
      props:[['backExt',{ax:ank[0],ay:ank[1],hx:hip[0],hy:hip[1],ah:L.ankleH}]]};},
@@ -1265,15 +1276,15 @@ const NRM={
   leather:()=>cvTex('leather',256,(g,S)=>{g.fillStyle='#808080';g.fillRect(0,0,S,S);noiseFill(g,S,2600,0.8,2.6,0.25);noiseFill(g,S,900,2,5,0.12);heightToNormal(g,S,2.2);},{rep:6}),
   knit:()=>cvTex('knit',256,(g,S)=>{g.fillStyle='#808080';g.fillRect(0,0,S,S);for(let y=0;y<S;y+=4)for(let x=0;x<S;x+=4){const v=110+((x/4+y/4)%2)*60+Math.random()*30;g.fillStyle=`rgb(${v},${v},${v})`;g.beginPath();g.ellipse(x+2,y+2,1.6,2.1,0,0,7);g.fill();}heightToNormal(g,S,1.4);},{rep:14}),
   knurl:()=>cvTex('knurl',128,(g,S)=>{g.fillStyle='#808080';g.fillRect(0,0,S,S);g.strokeStyle='#d0d0d0';g.lineWidth=2;for(let i=-S;i<2*S;i+=8){g.beginPath();g.moveTo(i,0);g.lineTo(i+S,S);g.stroke();g.beginPath();g.moveTo(i,S);g.lineTo(i+S,0);g.stroke();}heightToNormal(g,S,3);},{rep:4}),
-  rubber:()=>cvTex('rubberN',512,(g,S)=>{g.fillStyle='#808080';g.fillRect(0,0,S,S);noiseFill(g,S,16000,0.5,1.3,0.35);heightToNormal(g,S,1.5);},{rep:1}),
+  rubber:()=>cvTex('rubberN',512,(g,S)=>{g.fillStyle='#808080';g.fillRect(0,0,S,S);noiseFill(g,S,16000,0.5,1.3,0.35);heightToNormal(g,S,1.5);},{rep:1.6}),
 };
 const MAPS={
   wood:()=>cvTex('wood',512,(g,S)=>{g.fillStyle='#b98f62';g.fillRect(0,0,S,S);for(let i=0;i<220;i++){const y=Math.random()*S;g.strokeStyle=`rgba(${90+Math.random()*40|0},${55+Math.random()*25|0},${25+Math.random()*15|0},${0.10+Math.random()*0.25})`;g.lineWidth=0.6+Math.random()*2.2;g.beginPath();g.moveTo(0,y);for(let x=0;x<=S;x+=16)g.lineTo(x,y+Math.sin(x/60+i)*3+Math.sin(x/13+i*3)*0.8);g.stroke();}},{srgb:true,rep:1}),
   floorWood:()=>cvTex('floorWood',1024,(g,S)=>{const rows=18,pw=S/rows;for(let r=0;r<rows;r++){let x=-(Math.random()*S*0.3);while(x<S){const L=S*(0.18+Math.random()*0.25);const base=[188+Math.random()*22,162+Math.random()*18,128+Math.random()*16];
       g.fillStyle=`rgb(${base.map(v=>v|0)})`;g.fillRect(x,r*pw,L,pw);for(let i=0;i<14;i++){const y=r*pw+Math.random()*pw;g.strokeStyle=`rgba(110,72,40,${0.06+Math.random()*0.16})`;g.lineWidth=0.5+Math.random()*1.2;g.beginPath();g.moveTo(x,y);for(let xx=0;xx<=L;xx+=20)g.lineTo(x+xx,y+Math.sin(xx/50+i)*1.5);g.stroke();}
-      g.fillStyle='rgba(60,40,25,0.5)';g.fillRect(x,r*pw,1.5,pw);x+=L;}g.fillStyle='rgba(60,40,25,0.45)';g.fillRect(0,r*pw,S,1.5);}},{srgb:true,rep:1}),
+      g.fillStyle='rgba(60,40,25,0.5)';g.fillRect(x,r*pw,1.5,pw);x+=L;}g.fillStyle='rgba(60,40,25,0.45)';g.fillRect(0,r*pw,S,1.5);}},{srgb:true,rep:1.6}),
   rubber:()=>cvTex('rubber',1024,(g,S)=>{g.fillStyle='#34373c';g.fillRect(0,0,S,S);for(let i=0;i<60000;i++){const c=Math.random();g.fillStyle=c<0.93?`rgba(${70+Math.random()*30|0},${72+Math.random()*30|0},${78+Math.random()*30|0},0.5)`:'rgba(120,128,138,0.65)';g.fillRect(Math.random()*S,Math.random()*S,1.2+Math.random()*1.6,1.2+Math.random()*1.6);}
-      g.fillStyle='rgba(15,16,18,0.9)';for(let k=0;k<5;k++){g.fillRect(k*S/5,0,2,S);g.fillRect(0,k*S/5,S,2);}},{srgb:true,rep:1}),
+      g.fillStyle='rgba(15,16,18,0.9)';for(let k=0;k<5;k++){g.fillRect(k*S/5,0,2,S);g.fillRect(0,k*S/5,S,2);}},{srgb:true,rep:1.6}),
   radial:()=>cvTex('radial',256,(g,S)=>{const gr=g.createRadialGradient(S/2,S/2,S*0.18,S/2,S/2,S/2);gr.addColorStop(0,'#fff');gr.addColorStop(0.7,'#bbb');gr.addColorStop(1,'#000');g.fillStyle=gr;g.fillRect(0,0,S,S);}),
   mat:()=>cvTex('matT',256,(g,S)=>{g.fillStyle='#7fb09c';g.fillRect(0,0,S,S);noiseFill(g,S,3000,0.5,1.2,0.08);},{srgb:true,rep:3}),
 };
@@ -1281,15 +1292,22 @@ const MAPS={
 function propMats(){if(PMAT)return PMAT;
   const S=(c,r,m,o)=>{const x=new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:r,metalness:m||0},o||{}));x.color.convertSRGBToLinear();return x;};
   const lea=NRM.leather(),kn=NRM.knurl();
+  const WG=()=>cvTex('wallGrad',64,(g,S)=>{const gr=g.createLinearGradient(0,0,0,S);gr.addColorStop(0,'#dcdcdc');gr.addColorStop(0.45,'#ffffff');gr.addColorStop(0.8,'#efefef');gr.addColorStop(1,'#bdbdbd');g.fillStyle=gr;g.fillRect(0,0,S,S);},{srgb:true});
   PMAT={wood:S(0xffffff,.55,0,{map:MAPS.wood()}),woodD:S(0xd9c2a5,.6,0,{map:MAPS.wood()}),pad:S(0x23272c,.55,0,{normalMap:lea,normalScale:new THREE.Vector2(.5,.5)}),metal:S(0x9aa3ad,.3,.7),dark:S(0x2e3238,.42,.55),plate:S(0x1d1f22,.5,.35),plateR:S(0x2a2d31,.45,.4),
     mat:S(0x86b5a2,.88,0,{map:MAPS.mat()}),wall:S(0xeee8de,.95),band:S(0xf0862b,.5),bandB:S(0x2f7fd0,.5),bar:S(0xd8dde2,.22,1,{normalMap:kn,normalScale:new THREE.Vector2(.6,.6)}),handle:S(0xd2d7dc,.25,1,{normalMap:kn,normalScale:new THREE.Vector2(.7,.7)}),
     frame:S(0xb9c0c8,.35,.6),frameD:S(0x2b2f35,.42,.55),uph:S(0x1e2226,.5,0,{normalMap:lea,normalScale:new THREE.Vector2(.55,.55)}),uphA:S(0xd2553f,.5),cable:S(0x15171a,.5,.2),chrome:S(0xeef1f4,.12,1),stack:S(0x2a2d31,.38,.6),
     belt:S(0x1b1d20,.85,0,{normalMap:NRM.rubber()}),deck:S(0x4a5058,.45,.5),screen:S(0x0d1620,.15,.3),
-    gymF:S(0xffffff,.92,0,{map:MAPS.rubber(),normalMap:NRM.rubber(),alphaMap:MAPS.radial(),transparent:true}),
-    homeF:S(0xd2cec8,.62,0,{map:MAPS.floorWood(),alphaMap:MAPS.radial(),transparent:true}),
-    fitF:S(0xb8c0c8,.9,0,{map:MAPS.rubber(),normalMap:NRM.rubber(),alphaMap:MAPS.radial(),transparent:true}),
+    gymF:S(0xffffff,.92,0,{map:MAPS.rubber(),normalMap:NRM.rubber(),envMapIntensity:.55}),
+    homeF:S(0xd2cec8,.5,0,{map:MAPS.floorWood(),envMapIntensity:.55}),
+    fitF:S(0xb8c0c8,.9,0,{map:MAPS.rubber(),normalMap:NRM.rubber(),envMapIntensity:.55}),
     leaf:S(0x4f8a4a,.7,0,{side:THREE.DoubleSide}),pot:S(0xd8cdbd,.6),kb:S(0x222428,.45,.3),plate:S(0x1c1e21,.5,.2),plateR:S(0xc0392b,.5,.1),cushion:S(0xb7c6c2,.95),sofa:S(0xcfc2b0,.9),
-    rubberC:S(0x111214,.8),silver:S(0xc5ccd3,.3,.85)};
+    rubberC:S(0x111214,.8),silver:S(0xc5ccd3,.3,.85),
+    wallH:S(0xe2d5c1,.95,0,{map:WG(),envMapIntensity:.5}),wallG:S(0xb4bcc3,.95,0,{map:WG(),envMapIntensity:.5}),wallGd:S(0x3b4046,.9,0,{envMapIntensity:.6}),wallF:S(0x333940,.9,0,{map:WG(),envMapIntensity:.6}),wallFl:S(0xb9c1c8,.95,0,{map:WG(),envMapIntensity:.5}),trim:S(0xf6f3ee,.7),curtain:S(0xd9c9b2,.95),
+    mirror:S(0xd3dce4,.07,.95,{envMapIntensity:1.25}),frameW:S(0x8a6b4a,.6),clock:S(0xf4f4f2,.5),
+    book:[0xb5523b,0x2f6f8f,0xd9a441,0x4d7c5a,0x6b5b95,0xe8e2d6].map(c=>S(c,.8)),
+    glass:new THREE.MeshBasicMaterial({map:cvTex('sky',128,(g,S)=>{const gr=g.createLinearGradient(0,0,0,S);gr.addColorStop(0,'#cfe6ff');gr.addColorStop(0.55,'#f3f8ff');gr.addColorStop(0.72,'#dfeccf');gr.addColorStop(1,'#a9c79a');g.fillStyle=gr;g.fillRect(0,0,S,S);},{srgb:true})}),
+    led:new THREE.MeshBasicMaterial({color:0xfff3d6}),sun:new THREE.MeshBasicMaterial({color:0xfff0c4,transparent:true,opacity:.2,depthWrite:false}),
+    art:new THREE.MeshBasicMaterial({map:cvTex('art',128,(g,S)=>{g.fillStyle='#efe8da';g.fillRect(0,0,S,S);[['#d9573b',.2,.55,.22],['#1f6f9f',.55,.4,.3],['#f2b134',.72,.7,.14]].forEach(([c,x,y,r])=>{g.fillStyle=c;g.beginPath();g.arc(x*S,y*S,r*S,0,7);g.fill();});},{srgb:true})})};
   return PMAT;}
 /* rounded box geometry with smooth normals */
 const RBG={};
@@ -1308,6 +1326,39 @@ function rbox(sc,mat,x0,x1,y0,y1,z0,z1,r){ // rounded pad via scaled box + edge 
 function decor(sc,env,isGym){const M=propMats();const g=new THREE.Group();g.userData.decor=true;
   const cyl=(r0,r1,h,m,x,y,z,seg)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r0,r1,h,seg||20),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o;};
   const box=(m,x0,x1,y0,y1,z0,z1,r)=>{const o=new THREE.Mesh(rbGeo(x1-x0,y1-y0,z1-z0,r!=null?r:0.012),m);o.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);o.castShadow=true;o.receiveShadow=true;g.add(o);return o;};
+  /* --- miestnosť: steny viditeľné len zvnútra (pri otočení kamery nezavadzajú) --- */
+  const ZB=-2.7,XW=4.2,HW=3.4;
+  const wall=(m,x0,x1,y0,y1,z,ry,px)=>{const o=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0,y1-y0),m);if(ry){o.rotation.y=ry;o.position.set(px,(y0+y1)/2,(x0+x1)/2);}else o.position.set((x0+x1)/2,(y0+y1)/2,z);o.receiveShadow=true;g.add(o);return o;};
+  const walls=(mb,ms)=>{wall(mb,-XW,XW,0,HW,ZB);wall(ms,ZB,XW,0,HW,0,Math.PI/2,-XW);wall(ms,ZB,XW,0,HW,0,-Math.PI/2,XW);};
+  const flat=(m,x0,x1,y0,y1,z)=>{const o=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0,y1-y0),m);o.position.set((x0+x1)/2,(y0+y1)/2,z);g.add(o);return o;};
+  const nb=(m,x0,x1,y0,y1,z0,z1,r)=>{const o=box(m,x0,x1,y0,y1,z0,z1,r);o.castShadow=false;return o;};
+  const clock=(x,y)=>{const c=cyl(0.17,0.17,0.03,M.clock,x,y,ZB+0.02,32);c.rotation.x=Math.PI/2;c.castShadow=false;const r=cyl(0.18,0.18,0.02,M.frameD,x,y,ZB+0.012,32);r.rotation.x=Math.PI/2;r.castShadow=false;
+    nb(M.frameD,x-0.006,x+0.006,y,y+0.11,ZB+0.036,ZB+0.04,0.002);nb(M.frameD,x,x+0.08,y-0.006,y+0.006,ZB+0.036,ZB+0.04,0.002);};
+  if(env==='home'){walls(M.wallH,M.wallH);nb(M.trim,-XW,XW,0,0.09,ZB,ZB+0.015,0.004);
+    // okno so závesmi + slnečná škvrna na podlahe
+    const wx0=-2.75,wx1=-1.35,wy0=0.95,wy1=2.25;flat(M.glass,wx0,wx1,wy0,wy1,ZB+0.012);
+    nb(M.trim,wx0-0.05,wx1+0.05,wy1,wy1+0.05,ZB,ZB+0.05);nb(M.trim,wx0-0.07,wx1+0.07,wy0-0.05,wy0,ZB,ZB+0.09);nb(M.trim,wx0-0.05,wx0,wy0,wy1,ZB,ZB+0.05);nb(M.trim,wx1,wx1+0.05,wy0,wy1,ZB,ZB+0.05);
+    nb(M.trim,(wx0+wx1)/2-0.018,(wx0+wx1)/2+0.018,wy0,wy1,ZB,ZB+0.04);nb(M.trim,wx0,wx1,(wy0+wy1)/2-0.015,(wy0+wy1)/2+0.015,ZB,ZB+0.04);
+    nb(M.frameW,wx0-0.4,wx1+0.4,wy1+0.12,wy1+0.15,ZB+0.05,ZB+0.08,0.01);
+    [[wx0-0.36,wx0+0.02],[wx1-0.02,wx1+0.36]].forEach(([a,b])=>{for(let i=0;i<5;i++){const x=a+(b-a)*(i+0.5)/5;const c=cyl(0.042,0.05,wy1+0.12-0.12,M.curtain,x,(wy1+0.12+0.12)/2,ZB+0.07,10);c.castShadow=false;}});
+    [[-2.55,-1.05],[-1.75,-1.05]].forEach(([x,z])=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(0.62,1.25),M.sun);p.rotation.x=-Math.PI/2;p.rotation.z=-0.28;p.position.set(x+0.55,0.004,z);p.renderOrder=1;g.add(p);});
+    // obraz nad gaučom
+    nb(M.frameW,0.62,1.5,1.28,1.92,ZB,ZB+0.03,0.006);flat(M.art,0.66,1.46,1.32,1.88,ZB+0.034);
+    // polica s knihami pri ľavej stene
+    const bx=-XW+0.02;nb(M.woodD,bx,bx+0.3,0,1.5,-2.5,-2.46);nb(M.woodD,bx,bx+0.3,0,1.5,-1.24,-1.2);[0.02,0.5,0.98,1.46].forEach(y=>nb(M.woodD,bx,bx+0.3,y,y+0.035,-2.5,-1.2));
+    [0.055,0.535,1.015].forEach((y,r)=>{let z=-2.44;let i=r*2;while(z<-1.42){const w=0.035+((i*37)%5)*0.008,h=0.26+((i*53)%7)*0.022;nb(M.book[i%6],bx+0.05,bx+0.26,y,y+h,z,z+w,0.004);z+=w+0.006;i++;}});
+    // stojacia lampa
+    cyl(0.14,0.14,0.02,M.frameD,2.75,0.01,-2.2);cyl(0.012,0.012,1.5,M.frameD,2.75,0.76,-2.2,10);const sh=cyl(0.13,0.2,0.26,M.led,2.75,1.6,-2.2,24);sh.castShadow=false;
+  }else if(env==='gym'){walls(M.wallG,M.wallG);wall(M.wallGd,-XW,XW,0,0.95,ZB+0.006);nb(M.frameD,-XW,XW,0.95,0.985,ZB,ZB+0.02,0.004);
+    // lišta s gumami na stene + hodiny + okno pod stropom
+    nb(M.frameW,0.05,1.0,1.62,1.7,ZB,ZB+0.035,0.008);[[0.2,M.band],[0.42,M.bandB],[0.64,M.book[3]],[0.86,M.book[0]]].forEach(([x,m],i)=>{cyl(0.012,0.012,0.07,M.silver,x,1.66,ZB+0.06,8).rotation.x=Math.PI/2;nb(m,x-0.02,x+0.02,1.0+i*0.04,1.66,ZB+0.05,ZB+0.062,0.004);});
+    clock(-3.0,2.25);flat(M.glass,2.1,3.5,2.0,2.6,ZB+0.012);nb(M.trim,2.05,3.55,1.95,2.0,ZB,ZB+0.06);nb(M.trim,2.05,3.55,2.6,2.65,ZB,ZB+0.04);nb(M.trim,2.05,2.1,2.0,2.6,ZB,ZB+0.04);nb(M.trim,3.5,3.55,2.0,2.6,ZB,ZB+0.04);nb(M.trim,2.785,2.815,2.0,2.6,ZB,ZB+0.03);
+  }else{walls(M.wallF,M.wallFl);
+    // zrkadlová stena + svetelný pás
+    for(let i=0;i<5;i++){const x0=-3.86+i*1.56;flat(M.mirror,x0,x0+1.5,0.28,2.2,ZB+0.012);}
+    nb(M.frameD,-XW,XW,0.2,0.26,ZB,ZB+0.03,0.004);nb(M.frameD,-XW,XW,2.22,2.26,ZB,ZB+0.03,0.004);nb(M.led,-XW,XW,2.62,2.67,ZB,ZB+0.03,0.004);clock(3.2,2.95);
+    [-XW,XW].forEach(x=>{const o=nb(M.uphA,x-(x>0?0.012:0),x+(x>0?0:0.012),1.15,1.3,ZB,XW,0.002);});
+  }
   if(env==='home'){ // potted plant + low sofa far behind
     const px=-1.55,pz=-1.35;cyl(0.13,0.1,0.28,M.pot,px,0.14,pz);
     for(let i=0;i<14;i++){const a=i/14*Math.PI*2+Math.random()*0.3,L=0.35+Math.random()*0.25,el=0.9+Math.random()*0.5;const lf=new THREE.Mesh(new THREE.SphereGeometry(1,10,6),M.leaf);
@@ -1323,14 +1374,13 @@ function decor(sc,env,isGym){const M=propMats();const g=new THREE.Group();g.user
   }else{ // fitness: kettlebell row + mirror strip
     const z=-1.6;for(let i=0;i<5;i++){const x=-1.6+i*0.3,r=0.07+i*0.012;const b=new THREE.Mesh(new THREE.SphereGeometry(r,18,14),M.kb);b.position.set(x,r,z);b.castShadow=true;g.add(b);
       const h=new THREE.Mesh(new THREE.TorusGeometry(r*0.7,r*0.16,8,20,Math.PI),M.kb);h.position.set(x,r*1.75,z);h.castShadow=true;g.add(h);}
-    if(!isGym){box(M.frameD,0.4,1.9,0.0,0.06,-2.3,-2.25,0.005);const mir=new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.4),new THREE.MeshStandardMaterial({color:0xdfe7ee,roughness:0.08,metalness:0.9,envMapIntensity:1.2}));mir.position.set(1.15,0.76,-2.26);g.add(mir);}
   }
   sc.add(g);}
 function buildProps(sc,props,opts){
   const M=propMats();const bb=new THREE.Box3();
   const add=o=>{bb.expandByObject(o);return o;};
   const isGym=(props||[]).some(x=>MACH[x[0]]);const env=(opts&&opts.env)||(isGym?'fit':'home');
-  const fl=new THREE.Mesh(new THREE.PlaneGeometry(5.2,5.2),env==='home'?M.homeF:env==='gym'?M.gymF:M.fitF);fl.rotation.x=-Math.PI/2;fl.position.y=0.0005;fl.receiveShadow=true;fl.renderOrder=-1;fl.material.depthWrite=false;sc.add(fl);
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(8.4,8.4),env==='home'?M.homeF:env==='gym'?M.gymF:M.fitF);fl.rotation.x=-Math.PI/2;fl.position.y=0.0005;fl.receiveShadow=true;fl.renderOrder=-1;fl.material.depthWrite=false;sc.add(fl);
   if((!opts||opts.mat!==false)&&!isGym) pbox(sc,M.mat,-0.95,0.95,0.001,0.011,-0.33,0.33,0.005);
   if(!opts||opts.decor!==false)decor(sc,env,isGym);
   for(const [type,p] of (props||[])){
@@ -1424,11 +1474,11 @@ function initLook(renderer){if(ENVTEX||!renderer)return;try{const pm=new THREE.P
   ENVTEX=pm.fromScene(room,0.035).texture;pm.dispose();}catch(e){ENVTEX=null;}}
 function makeScene(){
   const sc=new THREE.Scene();if(ENVTEX){sc.environment=ENVTEX;}
-  sc.add(new THREE.HemisphereLight(0xffffff,0xb9ad9a,ENVTEX?0.25:0.75));
-  const d=new THREE.DirectionalLight(0xfffaf4,ENVTEX?1.0:1.05);d.position.set(1.6,3.4,2.4);d.castShadow=true;d.shadow.mapSize.set(1024,1024);
-  Object.assign(d.shadow.camera,{left:-2.4,right:2.4,top:2.8,bottom:-1.2,near:.5,far:9});d.shadow.bias=-0.0004;d.shadow.normalBias=0.012;sc.add(d);
+  sc.add(new THREE.HemisphereLight(0xffffff,0xb9ad9a,ENVTEX?0.2:0.7));
+  const d=new THREE.DirectionalLight(0xfff4e6,ENVTEX?1.25:1.2);d.position.set(1.9,3.6,2.6);d.castShadow=true;d.shadow.mapSize.set(2048,2048);d.shadow.radius=5;
+  Object.assign(d.shadow.camera,{left:-3.2,right:3.2,top:3.2,bottom:-2.2,near:.5,far:12});d.shadow.bias=-0.0004;d.shadow.normalBias=0.012;sc.add(d);
   const f2=new THREE.DirectionalLight(0xe8f0ff,ENVTEX?0.18:0.25);f2.position.set(-2,1.5,-1.5);sc.add(f2);
-  const fl=new THREE.Mesh(new THREE.PlaneGeometry(14,14),new THREE.ShadowMaterial({opacity:.18}));fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;sc.add(fl);
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(14,14),new THREE.ShadowMaterial({opacity:.2}));fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;sc.add(fl);
   return sc;
 }
 /* animation timing */
@@ -1765,7 +1815,7 @@ const FIT=[
   warn:'Tato: kľúčový cvik pre bedrový kĺb – plynulo a v bezbolestnom rozsahu.',vid:'https://www.strengthlog.com/hip-abduction-machine/'},
  {id:'f8',n:'Vzpriamovanie trupu na lavici 45°',rest:60,v:[V('Malý rozsah',L=>ANIM.backExt(L,false),{note:'Klesaj len kúsok, kým je chrbát rovný.'}),V('Plný rozsah',L=>ANIM.backExt(L,true))],
   lv:{m:[0,0,0,0],t:[0,1,1,1]},dose:{m:[[2,'10'],[3,'10'],[3,'12']],t:[[2,'10'],[3,'12'],[3,'12','s kotúčom 5 kg na hrudi']]},
-  how:['Opierku nastav pod bedrové kosti, päty pod valcami.','Ruky prekríž na hrudi, ohni sa v bokoch s rovným chrbtom.','Vráť sa stlačením zadku len do priamky s nohami.'],
+  how:['Opierku nastav pod bedrové kosti, päty pod valcami.','Ruky drž pri hrudi, ohni sa v bokoch s rovným chrbtom.','Vráť sa stlačením zadku len do priamky s nohami.'],
   warn:'Nikdy nie za priamku (žiadne prehnutie). Mama: len malý rozsah; ak cíti platničku, vynechá a urobí vtáčika – psa.',vid:'https://us.physitrack.com/home-exercise-video/45-degree-back-extension'},
  {id:'f9',n:'Pallof press na kladke',rest:45,v:[V('V kľaku',L=>ANIM.pallof(L,true)),V('V stoji',L=>ANIM.pallof(L,false))],
   lv:{m:[0,1,1,1],t:[0,1,1,1]},dose:{m:[[2,'8 na stranu','5 kg'],[3,'10 na stranu','5–7,5 kg'],[3,'10 na stranu','7,5–10 kg']],t:[[2,'8 na stranu','7,5 kg'],[3,'10 na stranu','10 kg'],[3,'10 na stranu','12,5–15 kg']]},
@@ -1813,7 +1863,8 @@ const BRT={h1:'Nádych pri ceste dole, výdych pri vstávaní.',g1:'Nádych dole
  f6:'Výdych pri pokrčení, nádych pri návrate.',f6b:'Výdych pri vystretí nôh, nádych pri spúšťaní.',f7:'Výdych pri roztláčaní kolien, nádych pri návrate.',f8:'Nádych pri predklone, výdych pri vzpriamení.',
  f9:'Výdych pri vytlačení rúk, nádych pri návrate.',f10:'Dýchaj tak, aby sa ešte dalo rozprávať.'};
 function breathOf(ex,an,t){const b=BR[ex.id];if(b==null)return WARM.includes(ex)||COOL.includes(ex)?{k:'calm'}:null;if(b==='h'||b==='w')return {k:'calm'};
-  const ph=phaseAt(an,t);const eff=b===1?ph.i%2===0:ph.i%2===1;return {k:ph.move?(eff?'out':'in'):'pause',eff,i:ph.i,move:ph.move};}
+  const ph=phaseAt(an,t);let e0=b===1;if(an.k.length===2&&an.durs&&an.durs[0]!==an.durs[1])e0=an.durs[0]<an.durs[1]; /* námaha = rýchlejšia fáza (spúšťanie je vždy pomalšie) */
+  const eff=e0?ph.i%2===0:ph.i%2===1;return {k:ph.move?(eff?'out':'in'):'pause',eff,i:ph.i,move:ph.move};}
 const BRL={out:'⬆ Výdych – námaha',in:'⬇ Nádych',calm:'🫁 Dýchaj pokojne'};
 const BADZ={kneesIn:['knees'],round:['back','upper'],arch:['back'],sag:['core','back'],shrug:['upper','shoulders'],leanBack:['back','upper']};
 const BAD={h1:['kneesIn','kolená padajú dovnútra a päty sa dvíhajú'],g1:['kneesIn','kolená padajú dovnútra'],h5:['kneesIn','predné koleno padá dovnútra, trup sa hrbí'],g5:['kneesIn','predné koleno padá dovnútra'],f5b:['kneesIn','predné koleno padá dovnútra'],
@@ -1948,9 +1999,10 @@ function camFor(v,aspect){
   const c=v.box.getCenter(v3(0,0,0)),sz=v.box.getSize(v3(0,0,0));
   const fit=Math.max(sz.y,Math.max(sz.x,sz.z*0.6)/aspect)*0.5/Math.tan(14*D2R)*1.06+0.75;
   const cp=Math.cos(v.pitch);v.cam.aspect=aspect;v.cam.updateProjectionMatrix();
-  v.cam.position.set(c.x+Math.sin(v.yaw)*cp*fit,c.y+Math.sin(v.pitch)*fit,c.z+Math.cos(v.yaw)*cp*fit);v.cam.lookAt(c);
+  const yw=v.yaw+(v.active||NOSWAY?0:0.075*Math.sin(performance.now()/5600+v.phase));
+  v.cam.position.set(c.x+Math.sin(yw)*cp*fit,c.y+Math.sin(v.pitch)*fit,c.z+Math.cos(yw)*cp*fit);v.cam.lookAt(c);
 }
-let rr=0;
+let rr=0;let NOSWAY=false;
 function renderViews(now){
   const vis=VIEWS.filter(v=>v.visible);if(!vis.length)return;
   let maxW=1,maxH=1;
@@ -2321,6 +2373,8 @@ document.addEventListener('click',async e=>{const id=e.target.id;
 document.addEventListener('change',e=>{if(e.target.id==='sMe'){SC.me=e.target.value;saveSC();}
   if(e.target.id==='sImp'){const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{const o=JSON.parse(t);DB=mergeDB(DB,o);dbSave();refreshLog();build();toast('Obnovené zo zálohy ✓');}catch(_){alert('Súbor sa nedá načítať.');}});}});
 
+window.CLIP_LIST='71yn2u z1bkm4 1wf56a0 kt5zlf pvrsy2 1ijyee2 kvwvn9 1teerxd 1oyox9g 1pitm4o 1zffdo 4xnmga 15zm0w 1e8g1la 1drm4bn 1hm7kve 1fr70ko 8v2s9g p8x0n0 1o2zv43 xho9ln wkyl4o alieot vvv5lh nnwbd5 8jg9ym 1gss3x1 br9o5r 1w1fw46 14xbyns 1gxrn2f 1e6qdrf 1hem601 1rghk2k 12amm03 eqgveh g6uks2 1nj2knu 1hfqtw2 1pupvgx 8xari9 3jiyyi imsahj na90i4 16r2n95 17eapiq jti02u e3i97r ogahh5 1qm4bo7 kwi601 98x6b6 15fqwfo 4v7kij 1r1odrl egpygn 1y561c8 18glyem zwlo6o 1rzn6cw e77f2n a7mj8f iu8288 4qc0o7 t81m93 xr8x6m 10h1k7l keqeep 1243u7w 675wvw 100tnhv 1oycfn5 o8x990 1iyxa1i 1nv6goz 1mztfqx ojvo5k 1ytx844 1prcwjz 19uk4fy 1pcx9t 1br65p0 1tnnzz3 yqur3u 17gl9pa kuo1jn qgpt47 an6clk n5bcct 1q6g9qr doevjj 1nc41td 17v2cg3 1clvmm1 jewqxq 3oe55r ajxrh7 1xuc1xy h9dji0 1hp0prq 18i4iib 15jwzq2 1bykims 8mz1zy 1k0nis4 1ijxiqt 173adm7 1vg9jh1 1qxzeni 1jvsh6q 17ba78j n64fzp d3se3b 7eh2nb 15vgq1x 1pmlyru 1lv3ptx 1dkix6q 1s0q2vg 1q5hh2j 13acpbf 1jnzyfr gxeaxc 1diw0pu r7w3q6 qr9u5u pea2zb 1azav6x 445yvr 3ojrm4 1wuo4n2 11qipe8 h2ui8r rkd5om 33314r 1r6t62w 10poxks 1tkbe8z 1cipga3 huobqi dulecc 1vdolp2 1djsgy8 map2f9 1o94o1p bqt77q 15uzclc 1o7gekh 12vno1t 1mkce5l ht53op f5298l rix4zh xf84eh dzme15 1r5i7fo 1l5ltqm 19qxk8q 23xrzg 1eyb9qj 1yn7dbn ce6yof 11kivkf 1xlwxdk 1y8dn8q 1h15q8p t1ovtl 1tjqfw8 6bke0a 1gtg66o 1gbim6a tyxqc4 hcotmm lj1cv4 1ylkzgy 6q2qbg 3zdd7q';
+
 /* =========================================================
    REŽIM „CVIČÍME“ – krok za krokom, série, pauza, hlas, zápis
    ========================================================= */
@@ -2336,13 +2390,32 @@ function vScore(v){let s=/^sk/i.test(v.lang)?100:0;if(/premium|prémi/i.test(v.n
 function vBest(){const L=vList();if(VS.name){const f=L.find(v=>v.name===VS.name);if(f)return f;}return L.slice().sort((a,b)=>vScore(b)-vScore(a))[0]||null;}
 function vQuality(v){return !v?'none':vScore(v)>=120?'good':'basic';}
 function utter(t,o){const u=new SpeechSynthesisUtterance(t);const v=vBest();u.lang=v?v.lang:'sk-SK';if(v)u.voice=v;u.rate=VS.rate*((o&&o.fast)?1.08:1);u.pitch=1;return u;}
-/* say = prehovor hneď (preruší predchádzajúce); sayNext = zaraď za to, čo práve hovorí */
-function say(t,o){if(!VOICE||!window.speechSynthesis||!t)return;try{speechSynthesis.cancel();String(t).split('|').map(x=>x.trim()).filter(Boolean).forEach(x=>speechSynthesis.speak(utter(x,o)));}catch(e){}}
-function sayNext(t,o){if(!VOICE||!window.speechSynthesis||!t)return;try{speechSynthesis.speak(utter(t,o));}catch(e){}}
+/* say = prehovor hneď (preruší predchádzajúce). Vety oddelené | idú za sebou.
+   Každá veta sa prehrá z nahrávky (audio/<kód>.mp3), a ak nahrávka nie je, povie ju hlas zariadenia. */
+const CLIPS=new Set((window.CLIP_LIST||'').split(' ').filter(Boolean));const CB={};let SAYG=0,CUR=null,CURR=null;
+VS.mode=(()=>{try{return localStorage.getItem('tr-vmode')||'clip';}catch(e){return 'clip';}})();
+function fnv(t){const b=new TextEncoder().encode(String(t).trim().toLowerCase());let h=0x811c9dc5;for(const x of b){h^=x;h=Math.imul(h,0x01000193)>>>0;}return h.toString(36);}
+function clipLoad(h){if(CB[h])return CB[h];const p=fetch('audio/'+h+'.mp3').then(r=>{if(!r.ok)throw new Error('http');return r.arrayBuffer();}).then(a=>new Promise((res,rej)=>AC.decodeAudioData(a,res,rej)));CB[h]=p;p.catch(()=>{delete CB[h];});return p;}
+function clipPlay(buf){return new Promise(res=>{try{const src=AC.createBufferSource(),G=AC.createGain();src.buffer=buf;src.playbackRate.value=clamp(VS.rate/0.95,0.85,1.2);G.gain.value=1;src.connect(G);G.connect(AC.destination);CUR=src;CURR=res;src.onended=()=>{if(CUR===src){CUR=null;CURR=null;}res();};src.start();}catch(e){res();}});}
+function ttsPlay(t,o){return new Promise(res=>{if(!window.speechSynthesis)return res();try{const u=utter(t,o);u.onend=u.onerror=()=>res();speechSynthesis.speak(u);setTimeout(res,12000);}catch(e){res();}});}
+function sayStop(){SAYG++;try{if(CUR){CUR.onended=null;CUR.stop();}}catch(e){}CUR=null;if(CURR){CURR();CURR=null;}try{window.speechSynthesis&&speechSynthesis.cancel();}catch(e){}}
+function say(t,o){if(!VOICE||!t)return;sayStop();const g=SAYG;const segs=String(t).split('|').map(x=>x.trim()).filter(Boolean);
+  (async()=>{for(const s of segs){if(g!==SAYG)return;const h=fnv(s);
+    if(VS.mode==='clip'&&AC&&CLIPS.has(h)){try{const b=await clipLoad(h);if(g!==SAYG)return;await clipPlay(b);continue;}catch(e){}}
+    if(g!==SAYG)return;await ttsPlay(s,o);}})();}
+function clipWarm(list){if(VS.mode!=='clip'||!AC)return;const q=[...new Set(list.map(fnv))].filter(h=>CLIPS.has(h)&&!CB[h]);let k=0;const next=()=>{if(k>=q.length)return;clipLoad(q[k++]).then(next,next);};for(let i=0;i<4;i++)next();}
+const PICK=a=>a[Math.floor(Math.random()*a.length)];
+const PH={go:['Ideme na to!','Poďme na to!','Tak ideme!'],short:'Krátky tréning, pätnásť minút.',next:['Ďalší cvik.','Ideme ďalej.','Pokračujeme.'],
+  setOk:['Výborne.','Pekne.','Dobrá práca.','Presne tak.','To bolo ono.'],rest:'Oddych.',hold:['Drž.','Držte.'],ten:'Ešte desať sekúnd.',skip:'Dobre, ideme ďalej.',holdOk:'Výborne, hotovo.',
+  exOk:['Cvik hotový, výborne.','Cvik máme za sebou. Pekne.','Hotovo, dobrá práca.'],rate:['Ohodnoť, ako to išlo.','Ohodnoťte, ako to išlo.'],
+  nextSet:['Ďalšia séria. Pripraviť sa.','Ideme na ďalšiu sériu.','Oddych končí, ďalšia séria.'],who:{m:'Mama.',t:'Tato.'},allSets:{m:'Mama má všetky série. Výborne.',t:'Tato má všetky série. Výborne.'},
+  fin:'Výborne, tréning je hotový!',pain:['Ako sa cíti chrbát a bedro?','Ako sa cítia chrbát a bedrá?'],praise:['Výborne!','Skvelá práca!','Super, len tak ďalej!','Paráda!','To je ono!'],saved:'Tréning je uložený.',
+  stop:'Stop.',ready:['Priprav sa.','Pripravte sa.'],last:'A posledné… výdych.',one:'Ešte jedno!',inh:'Nádych.',setDone:'Výborne, séria hotová.',tap:['Ťukni na Séria hotová.','Ťuknite na Séria hotová.'],hello:'Ahoj, som váš tréner.'};
 const P2=(sg,pl)=>WK.who&&WK.who.length>1?pl:sg;
 const NUMW=['nula','jeden','dva','tri','štyri','päť','šesť','sedem','osem','deväť','desať','jedenásť','dvanásť','trinásť','štrnásť','pätnásť','šestnásť','sedemnásť','osemnásť','devätnásť','dvadsať'];
 const numW=n=>NUMW[n]||String(n);
-const secW=n=>n===60?'jedna minúta':n===90?'minúta a pol':n===120?'dve minúty':numW(n)+' '+sk(n);
+const secW=n=>(n===60?'Jedna minúta':n===90?'Minúta a pol':n===120?'Dve minúty':n>120&&n%60===0?n/60+' minút':n<=20?numW(n)+' '+sk(n):n+' '+sk(n))+'.';const capW=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const cntW=n=>capW(numW(n))+'… výdych.';const numS=n=>capW(numW(n))+'.';
 /* krátka hlavná rada, ktorú tréner povie pri každom cviku */
 const CUE={h1:'Kolená smerujú ku špičkám, päty na zemi.',h2:'Tlač cez päty a hore stlač zadok.',h3:'Telo rovné ako doska.',h4:'Lopatky k sebe, ramená dole.',
  h5:'Trup vzpriamený, predné koleno nad členkom.',h6:'Trup sa netočí dozadu.',h7:'Panva sa nepreklápa, chrbát rovný.',h8:'Kríže stále pri zemi.',h9:'Brucho a zadok spevnené. A dýchaj.',
@@ -2354,20 +2427,25 @@ const CUE={h1:'Kolená smerujú ku špičkám, päty na zemi.',h2:'Tlač cez pä
 const cueOf=ex=>CUE[ex.id]||((ex.how||[])[0]||'');
 const PARTW={warm:'Rozcvička.',main:'Hlavná časť.',cool:'Na záver strečing.'};
 function stepIntro(i,first){const st=WK.steps[i];if(!st)return '';const prev=WK.steps[i-1];const part=(first||!prev||prev.part!==st.part)?PARTW[st.part]+'|':'';
-  return part+(first||part?'':'Ďalší cvik: ')+st.ex.n+'.|'+cueOf(st.ex);}
+  return part+(first||part?'':PICK(PH.next)+'|')+st.ex.n+'.|'+cueOf(st.ex);}
+function allPhrases(){const o=[];const add=x=>[].concat(x).forEach(y=>typeof y==='string'?o.push(y):Object.values(y).forEach(z=>o.push(z)));Object.values(PH).forEach(add);Object.values(PARTW).forEach(add);
+  const secs=new Set([45,60,90]);[...WARM,...HOME,...GYM,...FIT,...COOL].forEach(ex=>{o.push(ex.n+'.',cueOf(ex));if(ex.rest)secs.add(ex.rest);const rs=[ex.both];(ex.v||[]).forEach(v=>rs.push(v.r));['m','t'].forEach(w=>((ex.dose||{})[w]||[]).forEach(d=>rs.push(d[1])));rs.forEach(r=>{const s=secsOf(r);if(s)secs.add(s);});});
+  secs.forEach(s=>o.push(capW(secW(s))));for(let n=1;n<=20;n++)o.push(cntW(n),numS(n));return [...new Set(o.map(x=>x.trim()).filter(Boolean))];}
 function renderVoice(){const el=document.getElementById('voiceBox');if(!el)return;if(!window.speechSynthesis){el.innerHTML='<p class="mute">Tento prehliadač hlas nepodporuje.</p>';return;}
   const L=vList(),b=vBest(),q=vQuality(b);
-  el.innerHTML=`<p>${q==='good'?'✅ Používa sa kvalitný hlas <b>'+b.name+'</b>.':q==='basic'?'⚠️ Používa sa základný hlas <b>'+b.name+'</b> – znie roboticky.':'⚠️ Slovenský hlas sa nenašiel.'}</p>
+  el.innerHTML=`<p>${VS.mode==='clip'&&CLIPS.size?'✅ Hovorí <b>nahraný hlas trénera</b> – rovnaký na každom zariadení.':q==='good'?'✅ Používa sa kvalitný hlas <b>'+b.name+'</b>.':q==='basic'?'⚠️ Používa sa základný hlas <b>'+b.name+'</b> – znie roboticky.':'⚠️ Slovenský hlas sa nenašiel.'}</p>
    ${L.length>1?`<label>Hlas: <select id="vSel"><option value="">automaticky (najlepší)</option>${L.slice().sort((a,c)=>vScore(c)-vScore(a)).map(v=>`<option value="${v.name.replace(/"/g,'&quot;')}"${v.name===VS.name?' selected':''}>${v.name} (${v.lang})</option>`).join('')}</select></label>`:''}
+   <label>Kto hovorí: <select id="vMode"><option value="clip"${VS.mode==='clip'?' selected':''}>Nahraný hlas trénera</option><option value="dev"${VS.mode!=='clip'?' selected':''}>Hlas zariadenia</option></select></label>
    <label>Rýchlosť: <input type="range" id="vRate" min="0.8" max="1.15" step="0.05" value="${VS.rate}"> <span id="vRateN">${Math.round(VS.rate*100)} %</span></label>
    <div class="wkbtns"><button type="button" id="vTest">▶ Vyskúšať hlas</button></div>
-   ${q!=='good'?`<details${q==='none'?' open':''}><summary>Ako získať ľudskejší hlas (zadarmo)</summary><ol>
+   ${q!=='good'&&VS.mode!=='clip'?`<details${q==='none'?' open':''}><summary>Ako získať ľudskejší hlas zariadenia (zadarmo)</summary><ol>
     <li>Na iPade/iPhone otvor <b>Nastavenia → Prístupnosť → Hovorený obsah → Hlasy</b>.</li>
     <li>Vyber <b>Slovenčina → Laura</b> a stiahni verziu <b>Vylepšený</b> (Enhanced), prípadne <b>Prémiový</b>, ak je k dispozícii.</li>
     <li>Aplikáciu úplne zatvor a znova otvor – kvalitný hlas sa vyberie sám.</li></ol></details>`:''}`;}
-document.addEventListener('change',e=>{if(e.target.id==='vSel'){VS.name=e.target.value;try{localStorage.setItem('tr-vname',VS.name);}catch(_){}renderVoice();}});
+document.addEventListener('change',e=>{if(e.target.id==='vMode'){VS.mode=e.target.value;try{localStorage.setItem('tr-vmode',VS.mode);}catch(_){}renderVoice();}
+  if(e.target.id==='vSel'){VS.name=e.target.value;try{localStorage.setItem('tr-vname',VS.name);}catch(_){}renderVoice();}});
 document.addEventListener('input',e=>{if(e.target.id==='vRate'){VS.rate=+e.target.value;try{localStorage.setItem('tr-vrate',VS.rate);}catch(_){}const n=document.getElementById('vRateN');if(n)n.textContent=Math.round(VS.rate*100)+' %';}});
-document.addEventListener('click',e=>{if(e.target.closest('#vTest')){const o=VOICE;VOICE=true;say('Ahoj, som váš tréner.|Ďalší cvik: Drep.|'+CUE.h1);VOICE=o;}});
+document.addEventListener('click',e=>{if(e.target.closest('#vTest')){const o=VOICE;audioInit();VOICE=true;say(PH.hello+'|'+PH.next[0]+'|Drep.|'+CUE.h1);VOICE=o;}});
 try{speechSynthesis.addEventListener('voiceschanged',renderVoice);}catch(e){}
 const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}};
 const sk=n=>n===1?'sekunda':n>=2&&n<=4?'sekundy':'sekúnd';
@@ -2381,7 +2459,7 @@ function wkStart(short){audioInit();const who=['m','t'].filter(w=>document.getEl
   Object.assign(WK,{on:true,who,steps,i:0,log:{},start:Date.now(),d:today(),var:VAR,short:!!short});
   document.body.classList.add('wkon');document.getElementById('wk').hidden=false;wkStep(0);
   try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(l=>WK.lock=l).catch(()=>{});}catch(e){}
-  say((short?'Krátky tréning, pätnásť minút.|':'Ideme na to!|')+stepIntro(0,true));}
+  say((short?PH.short:PICK(PH.go))+'|'+stepIntro(0,true));setTimeout(()=>{try{clipWarm(allPhrases());}catch(e){}},2500);}
 function wkClose(ask){if(ask&&!confirm('Ukončiť tréning bez uloženia?'))return;paceStop(true);WK.on=false;document.body.classList.remove('tvmode');clearInterval(WK.tid);document.body.classList.remove('wkon');document.getElementById('wk').hidden=true;
   const sv=document.getElementById('wkView');unregisterViews(sv);sv.innerHTML='';try{WK.lock&&WK.lock.release();}catch(e){}}
 function wkStep(i,keep){
@@ -2422,10 +2500,10 @@ function wkRenderMain(){const {ex,per}=WK.cur;
     `${BR[ex.id]===0||BR[ex.id]===1?`<div class="wkbtns"><button type="button" class="big pace" id="wkPace">🗣 Počítaj so mnou</button></div>`:''}<div class="wkbtns"><button type="button" class="bk" id="wkBack"${WK.i===0?' disabled':''}>← Späť</button><button type="button" class="big go" id="wkNext">${per.every(p=>p.done>=(p.D.sets||1))?'Ďalší cvik →':'Preskočiť cvik →'}</button></div>
     <p class="mute wkt">${(ex.how||[]).slice(0,3).map((h,k)=>(k+1)+'. '+h).join(' ')}</p>${ex.warn?`<p class="warn">${ex.warn}</p>`:''}`;
   const lg=WK.log[ex.id]||{};per.forEach(p=>{if(lg[p.w]&&lg[p.w].r){const b=document.querySelector(`.rate[data-w="${p.w}"] [data-r="${lg[p.w].r}"]`);b&&b.classList.add('on');}});}
-function timerRun(secs,label,after){clearInterval(WK.tid);const end=Date.now()+secs*1000;const tb=document.getElementById('wkTimer');tb.hidden=false;let lastS=-1;tb.innerHTML=`<b></b><span>${label}</span><button type="button" id="wkSkip">Preskočiť</button>`;const tbB=tb.querySelector('b');
-  say(label+', '+secW(secs)+'.');
+function timerRun(secs,label,after){clearInterval(WK.tid);const end=Date.now()+secs*1000;const tb=document.getElementById('wkTimer');tb.hidden=false;let lastS=-1;tb.innerHTML=`<b></b><span>${label.replace('.','')}</span><button type="button" id="wkSkip">Preskočiť</button>`;const tbB=tb.querySelector('b');
+  say((WK.pre?WK.pre+'|':'')+label+'|'+capW(secW(secs)));WK.pre='';
   const tick=()=>{const s=Math.max(0,Math.ceil((end-Date.now())/1000));if(s===lastS)return;lastS=s;tbB.textContent=Math.floor(s/60)+':'+pad2(s%60);
-    if(s===10&&secs>15)say('Ešte desať sekúnd.');if(s<=3&&s>0)tone(660,0,0.15);
+    if(s===10&&secs>15)say(PH.ten);if(s<=3&&s>0)tone(660,0,0.15);
     if(s<=0){clearInterval(WK.tid);tone(880,0,0.3);tone(880,0.35,0.3);tone(1175,0.7,0.45);vib([200,100,200]);tb.hidden=true;after&&after();}};
   WK.tid=setInterval(tick,200);tick();}
 document.addEventListener('click',e=>{if(!WK.on){if(e.target.closest('#wkGo'))wkStart();else if(e.target.closest('#wkShort'))wkStart(true);return;}
@@ -2440,17 +2518,17 @@ document.addEventListener('click',e=>{if(!WK.on){if(e.target.closest('#wkGo'))wk
   const wv=t.closest('[data-wv]');if(wv){const w=wv.dataset.w,ex=WK.cur.ex;const c=vIdx(ex,w);OV[ex.id]=OV[ex.id]||{};OV[ex.id][w]=clamp(c+(+wv.dataset.wv),0,ex.v.length-1);save();try{rerenderCard(ex.id);}catch(_){}
     wkStep(WK.i,wkKeep());return;}
   if(t.closest('#wkVoice')){VOICE=!VOICE;try{localStorage.setItem('tr-voice',VOICE?'1':'0');}catch(_){}t.closest('#wkVoice').textContent=VOICE?'🔊':'🔇';return;}
-  if(t.closest('#wkSkip')){clearInterval(WK.tid);document.getElementById('wkTimer').hidden=true;say('Dobre, ideme ďalej.');return;}
-  if(t.closest('#wkT')){const s=+t.closest('#wkT').dataset.s;timerRun(s,P2('Drž','Držte'),()=>say('Výborne, hotovo.'));return;}
+  if(t.closest('#wkSkip')){clearInterval(WK.tid);document.getElementById('wkTimer').hidden=true;say(PH.skip);return;}
+  if(t.closest('#wkT')){const s=+t.closest('#wkT').dataset.s;timerRun(s,P2(PH.hold[0],PH.hold[1]),()=>say(PH.holdOk));return;}
   if(t.closest('#wkNext')){if(WK.i+1>=WK.steps.length)return wkFinish();wkStep(WK.i+1);say(stepIntro(WK.i));return;}
   const sd=t.closest('.sd');if(sd){const w=sd.dataset.w;const p=WK.cur.per.find(x=>x.w===w);const ex=WK.cur.ex;
     const r=document.querySelector(`.wkin input[data-f=r][data-w="${w}"]`),k=document.querySelector(`.wkin input[data-f=k][data-w="${w}"]`);
     const lg=WK.log[ex.id]=WK.log[ex.id]||{};lg[w]=lg[w]||{s:[],v:p.v.lab};lg[w].s.push([r?r.value:'',k?k.value:'']);
     p.defKg=k?k.value:p.defKg;p.repsN=r?r.value:p.repsN;p.done++;wkRenderMain();
     const s=p.D.sets||1;const allDone=WK.cur.per.every(x=>x.done>=(x.D.sets||1));
-    if(allDone)say('Cvik hotový, výborne.|'+P2('Ohodnoť, ako to išlo.','Ohodnoťte, ako to išlo.'));
-    else if(p.done<s&&ex.rest)timerRun(ex.rest,'Oddych',()=>say((WK.who.length>1?WHO2[w]+', ':'')+'ďalšia séria. Pripraviť sa.|'+cueOf(ex)));
-    else if(p.done>=s)say(WHO2[w]+' má všetky série. Výborne.');
+    if(allDone)say(PICK(PH.exOk)+'|'+P2(PH.rate[0],PH.rate[1]));
+    else if(p.done<s&&ex.rest){WK.pre=PICK(PH.setOk);timerRun(ex.rest,PH.rest,()=>say((WK.who.length>1?PH.who[w]+'|':'')+PICK(PH.nextSet)+'|'+cueOf(ex)));}
+    else if(p.done>=s)say(PH.allSets[w]);
     return;}
   const rb=t.closest('.rate button');if(rb){const w=rb.closest('.rate').dataset.w;const ex=WK.cur.ex;const lg=WK.log[ex.id]=WK.log[ex.id]||{};lg[w]=lg[w]||{s:[]};lg[w].r=rb.dataset.r;
     rb.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===rb));return;}
@@ -2460,7 +2538,7 @@ function wkFinish(){clearInterval(WK.tid);const sv=document.getElementById('wkVi
   const opt=(w,k)=>['bez bolesti','mierna','výrazná'].map((n,v)=>`<label><input type="radio" name="p${w}${k}" value="${v}" ${v===0?'checked':''}> ${n}</label>`).join('');
   document.getElementById('wkBody').innerHTML=WK.who.map(w=>`<div class="wkp ${w}"><b>${WHO2[w]}</b><div class="pain"><span>Chrbát / kríže</span>${opt(w,'b')}</div><div class="pain"><span>Bedro</span>${opt(w,'h')}</div></div>`).join('')+
    `<p class="mute">Myslí sa bolesť počas cvičenia alebo hneď po ňom, nie obyčajná únava svalov.</p><div class="wkbtns"><button type="button" class="big go" id="wkSave">💾 Uložiť tréning</button></div>`;
-  say('Výborne, tréning je hotový!|'+P2('Ako sa cíti chrbát a bedro?','Ako sa cítia chrbát a bedrá?'));}
+  say(PH.fin+'|'+P2(PH.pain[0],PH.pain[1]));}
 document.addEventListener('click',e=>{if(!e.target.closest('#wkSave'))return;const mins=Math.round((Date.now()-WK.start)/60000);
   const summ=wkSummary();
   WK.who.forEach(w=>{const pain={};pain[w]={b:+(document.querySelector(`input[name=p${w}b]:checked`)||{}).value||0,h:+(document.querySelector(`input[name=p${w}h]:checked`)||{}).value||0};
@@ -2479,11 +2557,11 @@ function wkSummary(){const out={};const mx=s=>{const k=(s||[]).map(q=>parseFloat
     out[w]={sets,reps,pr};});return out;}
 function celebrate(mins,summ){let el=document.getElementById('cele');if(!el){el=document.createElement('div');el.id='cele';document.body.appendChild(el);}
   const n=Object.keys(summ).length;const wk={};Object.keys(summ).forEach(w=>{const m=monday(today());wk[w]=entries(w).filter(x=>x.t==='train'&&x.d>=m).length;});
-  const praise=['Výborne!','Skvelá práca!','Super, len tak ďalej!','Paráda!','To je ono!'][Math.floor(Math.random()*5)];
+  const praise=PICK(PH.praise);
   el.innerHTML=`<canvas></canvas><div class="celc"><div class="celbig">🎉</div><h2>${praise}</h2><p class="mute">Tréning hotový za ${mins} min</p>
    ${Object.entries(summ).map(([w,o])=>`<div class="celp ${w}"><b>${WHO2[w]}</b><div class="celn"><span><i>${o.sets}</i>sérií</span><span><i>${o.reps}</i>opakovaní</span><span><i>${wk[w]}</i>tréning${wk[w]===1?'':wk[w]<5?'y':'ov'} tento týždeň</span></div>${o.pr.length?`<p class="celpr">⭐ Lepšie ako minule:<br>${o.pr.join('<br>')}</p>`:''}</div>`).join('')}
    <button type="button" class="big go" id="celOk">Pokračovať</button></div>`;
-  el.hidden=false;say(praise+' Tréning je uložený.');const cv=el.querySelector('canvas');confetti(cv);}
+  el.hidden=false;say(praise+'|'+PH.saved);const cv=el.querySelector('canvas');confetti(cv);}
 document.addEventListener('click',e=>{if(e.target.closest('#celOk')){const el=document.getElementById('cele');el.hidden=true;el.innerHTML='';}});
 function confetti(cv){const c=cv.getContext('2d');const W=cv.width=innerWidth*devicePixelRatio,H=cv.height=innerHeight*devicePixelRatio;const cols=['#d9573b','#1f6f9f','#2f7a3a','#f2b134','#8e5bd6'];
   const P=Array.from({length:160},()=>({x:Math.random()*W,y:-Math.random()*H*0.6,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,r:4+Math.random()*6,a:Math.random()*6,va:(Math.random()-.5)*.3,c:cols[Math.floor(Math.random()*cols.length)]}));
@@ -2492,14 +2570,14 @@ function confetti(cv){const c=cv.getContext('2d');const W=cv.width=innerWidth*de
 
 /* ---------- hlasový tréner: počíta opakovania v tempe ukážky ---------- */
 let PACE=null;
-function paceStop(silent){if(!PACE)return;clearInterval(PACE.tid);PACE=null;const b=document.getElementById('wkPace');if(b){b.textContent='🗣 Počítaj so mnou';b.classList.remove('on');}if(!silent)say('Stop.');}
+function paceStop(silent){if(!PACE)return;clearInterval(PACE.tid);PACE=null;const b=document.getElementById('wkPace');if(b){b.textContent='🗣 Počítaj so mnou';b.classList.remove('on');}if(!silent)say(PH.stop);}
 function paceStart(){const ex=WK.cur.ex;const V=VIEWS.filter(v=>document.getElementById('wkView').contains(v.el)&&v.an);if(!V.length){toast('Počkaj, kým sa načíta ukážka');return;}
   const target=Math.max(...WK.cur.per.map(p=>parseInt(p.D.reps)||10));V.forEach(v=>{v.clk=-v.phase-1500;});
   const v=V[0];let last='',n=0,done=false;const b=document.getElementById('wkPace');b.classList.add('on');
-  say(cueOf(ex)+'|'+P2('Priprav sa.','Pripravte sa.'));
+  say(cueOf(ex)+'|'+P2(PH.ready[0],PH.ready[1]));
   PACE={tid:setInterval(()=>{const t=v.clk+v.phase;if(t<0)return;const br=breathOf(ex,v.an,t);if(!br||!br.move)return;const key=br.i+':'+Math.floor(t/phaseAt(v.an,t).tot);if(key===last)return;last=key;
-    if(br.eff){if(done)return;n++;b.textContent=`⏹ ${n} / ${target}`;say(n>=target?'A posledné… výdych.':(n===target-1?numW(n)+', ešte jedno.':numW(n)+'… výdych'),{fast:1});if(n>=target){done=true;setTimeout(()=>{if(PACE){say('Výborne, séria hotová.|'+P2('Ťukni na Séria hotová.','Ťuknite na Séria hotová.'));paceStop(true);}},2600);}}
-    else if(!done)say('nádych',{fast:1});},90)};}
+    if(br.eff){if(done)return;n++;b.textContent=`⏹ ${n} / ${target}`;say(n>=target?PH.last:(n===target-1?numS(n)+'|'+PH.one:cntW(n)),{fast:1});if(n>=target){done=true;setTimeout(()=>{if(PACE){say(PH.setDone+'|'+P2(PH.tap[0],PH.tap[1]));paceStop(true);}},2600);}}
+    else if(!done)say(PH.inh,{fast:1});},90)};}
 
 /* =========================================================
    PRIPOMIENKY (Web Push cez GitHub Actions v repozitári denníka)

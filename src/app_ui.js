@@ -76,9 +76,10 @@ function camFor(v,aspect){
   const c=v.box.getCenter(v3(0,0,0)),sz=v.box.getSize(v3(0,0,0));
   const fit=Math.max(sz.y,Math.max(sz.x,sz.z*0.6)/aspect)*0.5/Math.tan(14*D2R)*1.06+0.75;
   const cp=Math.cos(v.pitch);v.cam.aspect=aspect;v.cam.updateProjectionMatrix();
-  v.cam.position.set(c.x+Math.sin(v.yaw)*cp*fit,c.y+Math.sin(v.pitch)*fit,c.z+Math.cos(v.yaw)*cp*fit);v.cam.lookAt(c);
+  const yw=v.yaw+(v.active||NOSWAY?0:0.075*Math.sin(performance.now()/5600+v.phase));
+  v.cam.position.set(c.x+Math.sin(yw)*cp*fit,c.y+Math.sin(v.pitch)*fit,c.z+Math.cos(yw)*cp*fit);v.cam.lookAt(c);
 }
-let rr=0;
+let rr=0;let NOSWAY=false;
 function renderViews(now){
   const vis=VIEWS.filter(v=>v.visible);if(!vis.length)return;
   let maxW=1,maxH=1;

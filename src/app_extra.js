@@ -27,7 +27,8 @@ const BRT={h1:'Nádych pri ceste dole, výdych pri vstávaní.',g1:'Nádych dole
  f6:'Výdych pri pokrčení, nádych pri návrate.',f6b:'Výdych pri vystretí nôh, nádych pri spúšťaní.',f7:'Výdych pri roztláčaní kolien, nádych pri návrate.',f8:'Nádych pri predklone, výdych pri vzpriamení.',
  f9:'Výdych pri vytlačení rúk, nádych pri návrate.',f10:'Dýchaj tak, aby sa ešte dalo rozprávať.'};
 function breathOf(ex,an,t){const b=BR[ex.id];if(b==null)return WARM.includes(ex)||COOL.includes(ex)?{k:'calm'}:null;if(b==='h'||b==='w')return {k:'calm'};
-  const ph=phaseAt(an,t);const eff=b===1?ph.i%2===0:ph.i%2===1;return {k:ph.move?(eff?'out':'in'):'pause',eff,i:ph.i,move:ph.move};}
+  const ph=phaseAt(an,t);let e0=b===1;if(an.k.length===2&&an.durs&&an.durs[0]!==an.durs[1])e0=an.durs[0]<an.durs[1]; /* námaha = rýchlejšia fáza (spúšťanie je vždy pomalšie) */
+  const eff=e0?ph.i%2===0:ph.i%2===1;return {k:ph.move?(eff?'out':'in'):'pause',eff,i:ph.i,move:ph.move};}
 const BRL={out:'⬆ Výdych – námaha',in:'⬇ Nádych',calm:'🫁 Dýchaj pokojne'};
 const BADZ={kneesIn:['knees'],round:['back','upper'],arch:['back'],sag:['core','back'],shrug:['upper','shoulders'],leanBack:['back','upper']};
 const BAD={h1:['kneesIn','kolená padajú dovnútra a päty sa dvíhajú'],g1:['kneesIn','kolená padajú dovnútra'],h5:['kneesIn','predné koleno padá dovnútra, trup sa hrbí'],g5:['kneesIn','predné koleno padá dovnútra'],f5b:['kneesIn','predné koleno padá dovnútra'],

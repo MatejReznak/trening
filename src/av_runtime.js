@@ -156,8 +156,8 @@ function avatarMats(A){
   if(A.mats) return A.mats;
   const M=avMats(),T=A.tex;
   if(A.h.kind==='avaturn'){const S=(o)=>new THREE.MeshStandardMaterial(Object.assign({roughness:.8,metalness:0},o));const col=c=>new THREE.Color(c).convertSRGBToLinear();
-    A.mats={a_body:skinUp(S({map:T.body,roughness:.58,normalMap:microN(),normalScale:new THREE.Vector2(.12,.12)})),a_top:S({map:T.top,color:col(A.h.topColor||0x3f78cf),roughness:.9,side:THREE.DoubleSide}),
-      a_bottom:S({map:T.bottom,color:col(A.h.bottomColor||0xffffff),roughness:.85,side:THREE.DoubleSide}),a_shoe:S({map:T.shoes,roughness:.7})};return A.mats;}
+    A.mats={a_body:skinUp(S({map:T.body,roughness:.58,normalMap:microN(),normalScale:new THREE.Vector2(.12,.12)})),a_top:S({map:T.top,color:col(A.h.topColor||0x3f78cf),roughness:.9,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2.5,polygonOffsetUnits:-24}),
+      a_bottom:S({map:T.bottom,color:col(A.h.bottomColor||0xffffff),roughness:.85,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-0.75,polygonOffsetUnits:-6}),a_shoe:S({map:T.shoes,roughness:.7})};return A.mats;}
   const cl=(m,o)=>{const n=m.clone();Object.assign(n,o);n.needsUpdate=true;return n;};
   A.mats={
     skin:skinUp(cl(M.skin,{map:T.detail,vertexColors:false,normalMap:microN(),normalScale:new THREE.Vector2(.18,.18)})),
@@ -332,7 +332,10 @@ function poseInstance(inst,p,opt){
     const qH=qCurH.multiply(qRestH.invert());
     out['hand.'+s]={p:W3,q:qH};
     const f2=B['forearm2.'+s].h.distanceTo(B['forearm.'+s].h)/B['hand.'+s].h.distanceTo(B['forearm.'+s].h);
-    out['forearm2.'+s]={p:E3.clone().lerp(W3,f2),q:qFA.clone().slerp(qH,.5)};
+    /* spodná polovica predlaktia preberá len pretočenie okolo osi predlaktia (nie ohyb zápästia), inak sa zápästie deformuje */
+    {const ax=W3.clone().sub(E3).normalize();const rel=qH.clone().multiply(qFA.clone().invert());if(rel.w<0)rel.set(-rel.x,-rel.y,-rel.z,-rel.w);const d=rel.x*ax.x+rel.y*ax.y+rel.z*ax.z;
+     const tw=new THREE.Quaternion(ax.x*d,ax.y*d,ax.z*d,rel.w);if(tw.lengthSq()<1e-8)tw.set(0,0,0,1);tw.normalize();
+     out['forearm2.'+s]={p:E3.clone().lerp(W3,f2),q:new THREE.Quaternion().slerp(tw,.6).multiply(qFA)};}
     const sh=out['shoulder.'+s];sh.q=sh.q.clone().slerp(qUA,.55);
     // fingers
     const curl=(p.curl&&p.curl[s]!=null)?p.curl[s]:(opt.curl&&(opt.curl[s]??opt.curl.all))??(hm==='floor'||hm==='wall'?0.05:hm==='bar'||hm==='grip'?1:0.25);

@@ -1098,7 +1098,7 @@ const ANIM={
      props:[['benchP',{x0:sh[0]-15,x1:hip[0]+5,top}]],ground:true};},
  /* supported row */
  rowSupported:L=>{const FY=FYa(L);const hip=[80,FY-L.LEG*0.88];const t=72;const p0={x:hip[0],y:hip[1],t,c:0,h:12,nl:{to:[97,FY]},fl:{to:[72,FY]}};const sh=shOf(L,p0);
-   const btop=sh[1]+L.ARM*0.78;const sup={to:[sh[0]+9,btop-L.handT],b:1};
+   const btop=sh[1]+L.ARM*0.78;const sup={to:[sh[0]+9,btop-L.handT+1.0],b:1,sp:-(L.shW-4.6),spE:-(L.shW-4.6)*0.35};
    const hang=mix(p0,{fa:sup,na:{a:[4,2],sp:1.2,spE:1}});
    const pull=mix(p0,{fa:sup,na:{a:[-118,-6],sp:1.6,spE:2.2}});
    return {k:[hang,pull],dur:1200,hold:450,hand:{L:'floor',R:'side'},curl:{R:1,L:.1},dyn:'db1',props:[['bench',{x0:sh[0]+1,x1:sh[0]+53,top:btop}]]};},

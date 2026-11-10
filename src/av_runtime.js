@@ -70,6 +70,10 @@ function prepAvatar(who,h,meshes){
     HD:lm.eyeC.distanceTo(shC)*U60, ankleH:B['foot.L'].h.y*U60, hipW:Math.abs(B['thigh.R'].h.z)*U60, shW:Math.abs(B['upperarm.R'].h.z)*U60,
     hipBack:6.2, shBack:5.6, kneeR:3.0, handT:1.5, elbowR:2.2};
   L.LEG=L.TH+L.SH; L.ARM=L.UA+L.FA;
+  /* hĺbka hrudníka a brucha + šírka pása zmerané z postavy (aby ruky a rukoväte nešli do tela) */
+  {let cf=0,bf=0,ww=0;const zl=L.shW/U60+0.02;for(const m of meshes){if(m.name!=='skin'&&m.name!=='top')continue;const P=m.pos;for(let i=0;i<P.length;i+=3){const x=P[i]-hipC.x,t=(P[i+1]-hipC.y)/Tlen,z=Math.abs(P[i+2]);
+      if(z<0.09&&t>0.62&&t<0.9)cf=Math.max(cf,x);if(z<0.07&&t>0.12&&t<0.5)bf=Math.max(bf,x);if(Math.abs(x)<0.05&&z<zl&&t>0.2&&t<0.5)ww=Math.max(ww,z);}}
+    L.chestF=(cf||0.11)*U60;L.bellyF=(bf||0.1)*U60;L.waistW=(ww||0.14)*U60;}
   // hand rest frames
   const hand={};
   for(const s of ['L','R']){
@@ -284,7 +288,12 @@ function poseInstance(inst,p,opt){
     const spA=(arm&&arm.sp||0)/U60, spE=(arm&&arm.spE!=null?arm.spE:(arm&&arm.sp||0)*0.5)/U60;
     const outward=side?v3(0,0,0):v3(0,0,s==='R'?1:-1);
     const solveArm=rt=>{const [e2,w2]=limb2(to2(rt),arm||{a:[3,3]},L.UA,L.FA,1);
-      return [to3(e2,rt.z).addScaledVector(outward,spE),to3(w2,rt.z).addScaledVector(outward,spA)];};
+      const Eh=to3(e2,rt.z).addScaledVector(outward,spE),W=to3(w2,rt.z).addScaledVector(outward,spA);
+      /* cieľ ruky + bočný posun: lakeť dopočítaj v 3D so skutočnými dĺžkami kostí (inak sa predlaktie naťahuje a ide do tela) */
+      if(arm&&arm.to&&(spA||spE)){const ua=L.UA/U60,fa=L.FA/U60;const d=W.clone().sub(rt);const D=d.length();
+        if(D>1e-4&&D<ua+fa-1e-4&&D>Math.abs(ua-fa)+1e-4){const dir=d.multiplyScalar(1/D);const a=(ua*ua-fa*fa+D*D)/(2*D);const h=Math.sqrt(Math.max(0,ua*ua-a*a));const c=rt.clone().addScaledVector(dir,a);
+          const hv=Eh.clone().sub(c);hv.addScaledVector(dir,-hv.dot(dir));if(hv.lengthSq()>1e-8)return [c.addScaledVector(hv.normalize(),h),W];}}
+      return [Eh,W];};
     let [E3,W3]=solveArm(root);
     // clavicle/scapula elevation when the arm goes above shoulder height (shrug -> natural shoulder line)
     const qChestS=out['spine01'].q;const tUp=A.up.clone().applyQuaternion(qChestS).normalize();

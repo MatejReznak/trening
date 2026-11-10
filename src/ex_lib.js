@@ -116,7 +116,8 @@ const ANIM={
    return Object.assign(a,{k:[p,mix(p,{nl:{a:[th-12,th-12]}}),p,mix(p,{fl:{a:[th-12,th-12]}})],dur:1000,hold:700});},
  /* RDL */
  rdl:(L,deep,bar)=>{const FY=FYa(L);const R0=[13,14],R1=[14,16],SP=bar?0.6:-2.3,SPB=bar?0.6:-0.6;const s=standP(L,{na:{a:R0,sp:SP},fa:{a:R0,sp:SP}});
-   const b=mix(s,{x:100-(deep?0.3:0.19)*L.LEG,y:FY-L.LEG*(deep?0.925:0.955),t:deep?70:46,h:deep?8:4,nl:{to:[101.5,FY]},fl:{to:[98.5,FY]},na:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SPB},fa:{a:deep?R1:[R1[0]-2,R1[1]-2],sp:SPB}});
+   const b=mix(s,{x:100-(deep?0.3:0.19)*L.LEG,y:FY-L.LEG*(deep?0.925:0.955),t:deep?70:46,h:deep?8:4,nl:{to:[101.5,FY]},fl:{to:[98.5,FY]}});
+   {const sb=shOf(L,b);const legX=Math.max((b.x+100)/2,100-1)+L.kneeR+(bar?2.2:5.2);const ang=Math.max(-40,Math.min(16,Math.asin(Math.max(-1,Math.min(1,(legX-sb[0])/(L.ARM*0.99))))/D2R));b.na={a:[ang,ang+1.5],sp:SPB};b.fa={a:[ang,ang+1.5],sp:SPB};}
    return {k:[s,b],dur:1700,hold:450,hand:{all:'pron'},curl:{all:1},dyn:bar?'barbell':'db2'};},
  /* presses */
  floorPress:L=>{const FY=FYa(L);const x0=95;const p=supP(L,{x:x0,nl:{to:[x0+L.TH*1.25,FY],b:-1},fl:{to:[x0+L.TH*1.23,FY],b:-1}});
@@ -193,7 +194,7 @@ Object.assign(ANIM,{
  cableRow:L=>{const st=FL-0.40*U60,hx=80;const p0=seatP(L,st,hx,4,{h:-4});const feetX=hx+L.LEG*0.86,fy=FYa(L)-6;
    const legs={nl:{to:[feetX,fy],b:-1,sp:1},fl:{to:[feetX-1,fy+0.5],b:-1,sp:1},fo:-X3(feetX+L.ankleH*0.95)};
    const a=mix(p0,Object.assign({t:16,h:-12},legs));const sa=shOf(L,a);a.na={to:[sa[0]+L.ARM*0.93,sa[1]+L.ARM*0.32],b:1,sp:-(L.shW-3.4),spE:-(L.shW*0.45)};a.fa=a.na;
-   const b=mix(p0,Object.assign({t:-4,h:4},legs));const sb=shOf(L,b);b.na={to:[hx+6,p0.y-L.T*0.42],b:1,sp:-(L.shW-3.4),spE:1.5};b.fa=b.na;
+   const b=mix(p0,Object.assign({t:-4,h:4},legs));const sb=shOf(L,b);b.na={to:[hx+L.bellyF+3.2,p0.y-L.T*0.42],b:1,sp:-(L.shW-3.4),spE:2.6};b.fa=b.na;
    return {k:[a,b],dur:1300,hold:450,curl:{all:1},ground:false,footN:[-1,0],footRelax:12,
      props:[['cableRow',{st,hx,feetX:feetX+L.ankleH*0.95,fy}]],dyn:{type:'cableRow',px:X3(feetX+L.ankleH*0.95+3),py:Y3(fy)}};},
  legCurl:L=>{const st=seatTopFor(L)-6,hx=92,t=-12;const p=seatP(L,st,hx,t);
@@ -216,17 +217,17 @@ Object.assign(ANIM,{
  pallof:(L,kneel)=>{const FY=FYa(L);let base;
    if(kneel){const kneeY=FL-L.kneeR;base={x:100,y:kneeY-L.TH*0.99,t:0,c:0,h:0,nl:{a:[0,-90],sp:2},fl:{a:[0,-90],sp:2}};}
    else base=standP(L,{y:FY-L.LEG*0.975,nl:{to:[101,FY],sp:2.6},fl:{to:[99,FY],sp:2.6}});
-   const sh=shOf(L,base);const near=[sh[0]+5,sh[1]+6.5],far=[sh[0]+L.ARM*0.93,sh[1]+5];
-   const mk=h=>mix(base,{na:{to:h,b:1,sp:-(L.shW-3.2),spE:-1},fa:{to:h,b:1,sp:-(L.shW-3.2),spE:-1}});
-   return {k:[mk(near),mk(far)],dur:1300,hold:900,curl:{all:1},
+   const sh=shOf(L,base);const near=[sh[0]+L.chestF+3.2,sh[1]+6.5],far=[sh[0]+L.ARM*0.93,sh[1]+5];
+   const mk=(h,e)=>mix(base,{na:{to:h,b:1,sp:-(L.shW-3.2),spE:e},fa:{to:h,b:1,sp:-(L.shW-3.2),spE:e}});
+   return {k:[mk(near,2.2),mk(far,-1)],dur:1300,hold:900,curl:{all:1},
      props:[['cableTower',{y:sh[1]+6}]],dyn:{type:'pallof',py:Y3(sh[1]+6)}};},
  bike:L=>{const cx=104,cy=FL-0.30*U60,r=0.17*U60;const hx=90;const hY=cy+r-L.ankleH*0.9-Math.sqrt(Math.pow(0.975*L.LEG,2)-Math.pow(10,2));const st=hY+L.hipBack*0.92;
    const p0={x:hx,y:hY,t:28,c:2,h:-24};const sh=shOf(L,p0);const hb=[sh[0]+L.ARM*0.78,sh[1]+L.ARM*0.5];
-   const k=[];const N=12;
+   const k=[];const N=12;const hw=[hb[0]-4.4,hb[1]-1.6]; /* zápästie pred tyčou, aby dlaň ležala na riadidlách */
    for(let i=0;i<N;i++){const th=i/N*2*Math.PI;const pd=s=>{const a=th+(s?Math.PI:0);return [cx+r*Math.cos(a),cy+r*Math.sin(a)];};
      const R=pd(0),Lf=pd(1);const off=[-4.2,-L.ankleH*0.9];
      k.push(mix(p0,{y:p0.y+0.3*Math.sin(2*th),nl:{to:[R[0]+off[0],R[1]+off[1]],b:-1,sp:1.4},fl:{to:[Lf[0]+off[0],Lf[1]+off[1]],b:-1,sp:1.4},foR:Y3(R[1])+0.012,foL:Y3(Lf[1])+0.012,cr:th,
-       na:{to:hb,b:1,sp:2.6},fa:{to:hb,b:1,sp:2.6}}));}
+       na:{to:hw,b:1,sp:2.6},fa:{to:hw,b:1,sp:2.6}}));}
    k.push(k[0]);
    return {k,dur:110,wrap:1,curl:{all:1},hand:{all:'pron'},ground:false,footRelax:-10,
      props:[['bike',{cx,cy,st,hx,hb}]],dyn:{type:'bike',cx:X3(cx),cy:Y3(cy),r:r/U60}};},

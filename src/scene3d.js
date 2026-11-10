@@ -424,6 +424,6 @@ function machUpdate(D,inst){const o=D.objs,P=D.P,d=D.dyn,p=inst._p||{};const st=
   else if(D.m==='bike'){const th=p.cr||0;[0,1].forEach(i=>{const a=th+(i?Math.PI:0);const z=(i?-1:1)*0.115;const pp=v3(d.cx+d.r*Math.cos(a),d.cy-d.r*Math.sin(a),z);
       placeSeg3(o.cr[i],v3(d.cx,d.cy,z*0.7),pp);o.pd[i].position.copy(pp).add(v3(0,0.011,0));});}
   else if(D.m==='elliptical'){const th=p.cr||0;['R','L'].forEach((s,i)=>{const a=th+(i?Math.PI:0);const z=(i?-1:1)*0.12;const pp=v3(d.cx+d.a*Math.cos(a),d.cy-d.b*Math.sin(a)-0.018,z);
-      o.pd[i].position.copy(pp);const h=pc(s==='R'?'L':'R');const hz=v3(h.x,h.y,(i?-1:1)*0.24);
-      placeSeg3(o.arm[i],hz.clone().add(v3(0,0.08,0)),v3(P._piv.x,P._piv.y-0.55,z*1.4));placeSeg3(o.link[i],v3(P._piv.x,P._piv.y-0.55,z*1.4),pp.clone().add(v3(0.17,0,0)));});}
+      o.pd[i].position.copy(pp);const h=pc(s==='R'?'L':'R');const hz=v3(h.x,h.y,h.z);const lo=v3(P._piv.x,P._piv.y-0.55,z*1.4);
+      placeSeg3(o.arm[i],hz.clone().addScaledVector(hz.clone().sub(lo).normalize(),0.1),lo);placeSeg3(o.link[i],v3(P._piv.x,P._piv.y-0.55,z*1.4),pp.clone().add(v3(0.17,0,0)));});}
 }

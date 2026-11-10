@@ -4,7 +4,7 @@
 const WK={on:false};
 let VOICE=(()=>{try{return localStorage.getItem('tr-voice')!=='0';}catch(e){return true;}})();
 let AC=null;
-function audioInit(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();AC.resume&&AC.resume();}catch(e){}}
+function audioInit(){try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();AC.resume&&AC.resume();}catch(e){}}
 function tone(f,t0,d,g){try{const o=AC.createOscillator(),G=AC.createGain();o.frequency.value=f;o.connect(G);G.connect(AC.destination);G.gain.setValueAtTime(g||0.25,AC.currentTime+t0);G.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+t0+d);o.start(AC.currentTime+t0);o.stop(AC.currentTime+t0+d);}catch(e){}}
 /* ---------- hlas trénera ---------- */
 const VS={name:(()=>{try{return localStorage.getItem('tr-vname')||'';}catch(e){return '';}})(),rate:(()=>{try{return +localStorage.getItem('tr-vrate')||0.95;}catch(e){return 0.95;}})()};

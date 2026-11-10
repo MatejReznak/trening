@@ -632,7 +632,7 @@ function poseInstance(inst,p,opt){
     const spA=(arm&&arm.sp||0)/U60, spE=(arm&&arm.spE!=null?arm.spE:(arm&&arm.sp||0)*0.5)/U60;
     const outward=side?v3(0,0,0):v3(0,0,s==='R'?1:-1);
     const solveArm=rt=>{const [e2,w2]=limb2(to2(rt),arm||{a:[3,3]},L.UA,L.FA,1);
-      const Eh=to3(e2,rt.z).addScaledVector(outward,spE),W=to3(w2,rt.z).addScaledVector(outward,spA);
+      const Eh=to3(arm&&arm.eh?arm.eh:e2,rt.z).addScaledVector(outward,spE),W=to3(w2,rt.z).addScaledVector(outward,spA);
       /* cieľ ruky + bočný posun: lakeť dopočítaj v 3D so skutočnými dĺžkami kostí (inak sa predlaktie naťahuje a ide do tela) */
       if(arm&&arm.to&&(spA||spE)){const ua=L.UA/U60,fa=L.FA/U60;const d=W.clone().sub(rt);const D=d.length();
         if(D>1e-4&&D<ua+fa-1e-4&&D>Math.abs(ua-fa)+1e-4){const dir=d.multiplyScalar(1/D);const a=(ua*ua-fa*fa+D*D)/(2*D);const h=Math.sqrt(Math.max(0,ua*ua-a*a));const c=rt.clone().addScaledVector(dir,a);
@@ -1256,7 +1256,8 @@ Object.assign(ANIM,{
 
 /* ===== level-4 variants: barbell on the back, leg extension ===== */
 function bbArms(L,p){const sh=shOf(L,p);const u=[Math.sin(dg(p.t)),-Math.cos(dg(p.t))],f=[Math.cos(dg(p.t)),Math.sin(dg(p.t))];
-  const h=[sh[0]-f[0]*2.6+u[0]*0.5,sh[1]-f[1]*2.6+u[1]*0.5];return {na:{to:h,b:-1,sp:L.shW*1.05,spE:L.shW*1.3},fa:{to:h,b:-1,sp:L.shW*1.05,spE:L.shW*1.3}};}
+  const h=[sh[0]-f[0]*2.6+u[0]*0.5,sh[1]-f[1]*2.6+u[1]*0.5];const eh=[h[0]-u[0]*14-f[0]*3.5,h[1]-u[1]*14-f[1]*3.5]; /* lakte pod tyčou, len mierne dozadu */
+  const A={to:h,b:-1,sp:L.shW*0.62,spE:L.shW*0.5,eh};return {na:A,fa:A};}
 Object.assign(ANIM,{
  backSquat:L=>{const FY=FYa(L);const s=standP(L,{nl:{to:[101.5,FY],sp:2.2},fl:{to:[98.5,FY],sp:2.2}});const {hip}=hipFromFoot(L,[101.5,FY],-30,84);
    const b=mix(s,{x:hip[0],y:hip[1],t:38,h:-26});Object.assign(s,bbArms(L,s));Object.assign(b,bbArms(L,b));

@@ -288,7 +288,7 @@ function poseInstance(inst,p,opt){
     const spA=(arm&&arm.sp||0)/U60, spE=(arm&&arm.spE!=null?arm.spE:(arm&&arm.sp||0)*0.5)/U60;
     const outward=side?v3(0,0,0):v3(0,0,s==='R'?1:-1);
     const solveArm=rt=>{const [e2,w2]=limb2(to2(rt),arm||{a:[3,3]},L.UA,L.FA,1);
-      const Eh=to3(e2,rt.z).addScaledVector(outward,spE),W=to3(w2,rt.z).addScaledVector(outward,spA);
+      const Eh=to3(arm&&arm.eh?arm.eh:e2,rt.z).addScaledVector(outward,spE),W=to3(w2,rt.z).addScaledVector(outward,spA);
       /* cieľ ruky + bočný posun: lakeť dopočítaj v 3D so skutočnými dĺžkami kostí (inak sa predlaktie naťahuje a ide do tela) */
       if(arm&&arm.to&&(spA||spE)){const ua=L.UA/U60,fa=L.FA/U60;const d=W.clone().sub(rt);const D=d.length();
         if(D>1e-4&&D<ua+fa-1e-4&&D>Math.abs(ua-fa)+1e-4){const dir=d.multiplyScalar(1/D);const a=(ua*ua-fa*fa+D*D)/(2*D);const h=Math.sqrt(Math.max(0,ua*ua-a*a));const c=rt.clone().addScaledVector(dir,a);

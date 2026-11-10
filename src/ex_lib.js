@@ -273,7 +273,8 @@ Object.assign(ANIM,{
 
 /* ===== level-4 variants: barbell on the back, leg extension ===== */
 function bbArms(L,p){const sh=shOf(L,p);const u=[Math.sin(dg(p.t)),-Math.cos(dg(p.t))],f=[Math.cos(dg(p.t)),Math.sin(dg(p.t))];
-  const h=[sh[0]-f[0]*2.6+u[0]*0.5,sh[1]-f[1]*2.6+u[1]*0.5];return {na:{to:h,b:-1,sp:L.shW*1.05,spE:L.shW*1.3},fa:{to:h,b:-1,sp:L.shW*1.05,spE:L.shW*1.3}};}
+  const h=[sh[0]-f[0]*2.6+u[0]*0.5,sh[1]-f[1]*2.6+u[1]*0.5];const eh=[h[0]-u[0]*14-f[0]*3.5,h[1]-u[1]*14-f[1]*3.5]; /* lakte pod tyčou, len mierne dozadu */
+  const A={to:h,b:-1,sp:L.shW*0.62,spE:L.shW*0.5,eh};return {na:A,fa:A};}
 Object.assign(ANIM,{
  backSquat:L=>{const FY=FYa(L);const s=standP(L,{nl:{to:[101.5,FY],sp:2.2},fl:{to:[98.5,FY],sp:2.2}});const {hip}=hipFromFoot(L,[101.5,FY],-30,84);
    const b=mix(s,{x:hip[0],y:hip[1],t:38,h:-26});Object.assign(s,bbArms(L,s));Object.assign(b,bbArms(L,b));

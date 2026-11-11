@@ -1,5 +1,6 @@
 /* ===== props, dynamic objects, scene helpers ===== */
 const X3=x=>(x-100)/U60, Y3=y=>(FLY-y)/U60;
+const SMX=1.25,SMY=0.42; /* úchyt lana SM systému na nohe stola (m) */
 let PMAT=null;
 /* ---------- procedural textures ---------- */
 const TEXC={};
@@ -39,7 +40,7 @@ function propMats(){if(PMAT)return PMAT;
     homeF:S(0xd2cec8,.5,0,{map:MAPS.floorWood(),envMapIntensity:.55}),
     fitF:S(0xb8c0c8,.9,0,{map:MAPS.rubber(),normalMap:NRM.rubber(),envMapIntensity:.55}),
     leaf:S(0x4f8a4a,.7,0,{side:THREE.DoubleSide}),pot:S(0xd8cdbd,.6),kb:S(0x222428,.45,.3),plate:S(0x1c1e21,.5,.2),plateR:S(0xc0392b,.5,.1),cushion:S(0xb7c6c2,.95),sofa:S(0xcfc2b0,.9),
-    rubberC:S(0x111214,.8),silver:S(0xc5ccd3,.3,.85),
+    rubberC:S(0x111214,.8),silver:S(0xc5ccd3,.3,.85),smRope:S(0xd8262c,.7),
     wallH:S(0xe2d5c1,.95,0,{map:WG(),envMapIntensity:.5}),wallG:S(0xb4bcc3,.95,0,{map:WG(),envMapIntensity:.5}),wallGd:S(0x3b4046,.9,0,{envMapIntensity:.6}),wallF:S(0x333940,.9,0,{map:WG(),envMapIntensity:.6}),wallFl:S(0xb9c1c8,.95,0,{map:WG(),envMapIntensity:.5}),trim:S(0xf6f3ee,.7),curtain:S(0xd9c9b2,.95),
     mirror:S(0xd3dce4,.07,.95,{envMapIntensity:1.25}),frameW:S(0x8a6b4a,.6),clock:S(0xf4f4f2,.5),
     book:[0xb5523b,0x2f6f8f,0xd9a441,0x4d7c5a,0x6b5b95,0xe8e2d6].map(c=>S(c,.8)),
@@ -128,6 +129,10 @@ function buildProps(sc,props,opts){
       [[x0+0.025,-z+0.025],[x0+0.025,z-0.025],[x1-0.025,-z+0.025],[x1-0.025,z-0.025]].forEach(([x,zz])=>add(pbox(sc,M.woodD,x-0.018,x+0.018,0,top-0.035,zz-0.018,zz+0.018)));
       const bx=type==='chair2'?x1:x0;const btop=p.back!=null?Y3(p.back):top+0.42;
       add(pbox(sc,M.wood,bx-(type==='chair2'?0.03:0),bx+(type==='chair2'?0:0.03),top,btop,-z,z));
+    } else if(type==='smTable'){ /* stôl, lano je uviazané o jeho najbližšiu nohu */
+      const sg=p.back?-1:1;const x0=sg*SMX,x1=sg*(SMX+0.75),xa=Math.min(x0,x1),xb=Math.max(x0,x1),top=0.74;
+      add(pbox(sc,M.wood,xa-0.03,xb+0.03,top-0.04,top,-0.06,0.86));
+      [[x0,0],[x0,0.8],[x1,0],[x1,0.8]].forEach(([x,zz])=>add(pbox(sc,M.woodD,x-0.025,x+0.025,0,top-0.04,zz-0.025,zz+0.025)));
     } else if(type==='table'){
       const x0=X3(p.x0),x1=X3(p.x1),top=Y3(p.top);
       add(pbox(sc,M.wood,x0,x1,top-0.04,top,-0.45,0.45));
@@ -186,12 +191,16 @@ function buildDyn(sc,inst,dyn,props){
   else if(dyn==='bandRow') D.objs=[makeBand(sc),makeBand(sc)];
   else if(dyn==='bandKnees') D.objs=[makeBand(sc,propMats().bandB)];
   else if(dyn==='bandHam') D.objs=[makeBand(sc),makeBand(sc)];
+  else if(dyn==='ballR'){const m=new THREE.Mesh(new THREE.SphereGeometry(0.036,20,14),new THREE.MeshStandardMaterial({color:0xf2c230,roughness:.8}));m.castShadow=true;sc.add(m);D.objs=[m];}
+  else if(dyn==='smF'||dyn==='smB'){D.objs=[makeBand(sc,propMats().smRope),makeBand(sc,propMats().smRope)];D.objs.forEach(o=>o.scale.x=o.scale.z=1.25);}
   return D;
 }
 function updateDyn(D,inst){
   if(!D||!D.type) return;if(D.type==='mach')return machUpdate(D,inst);const t=D.type,o=D.objs;
   if(t==='db2'){['R','L'].forEach((s,i)=>orientY(o[i],gripOf(inst,s),palmAxis(inst,s)));}
   else if(t==='db1'){orientY(o[0],gripOf(inst,'R'),palmAxis(inst,'R'));}
+  else if(t==='ballR'){o[0].position.copy(gripOf(inst,'R'));}
+  else if(t==='smF'||t==='smB'){const an=v3(t==='smF'?SMX:-SMX,SMY,0);['R','L'].forEach((s,i)=>{placeSeg3(o[i],an,gripOf(inst,s));o[i].scale.x=o[i].scale.z=1.25;});}
   else if(t==='goblet'){const a=palmOf(inst,'R'),b=palmOf(inst,'L');const c=a.clone().lerp(b,.5);
     const fw=boneWorld(inst,'spine01',inst.A.lm.shC.clone().add(v3(0.2,0,0))).sub(boneWorld(inst,'spine01',inst.A.lm.shC));fw.y=0;fw.normalize();
     orientY(o[0],c.addScaledVector(fw,0.022).add(v3(0,-0.055,0)),v3(0,1,0));}

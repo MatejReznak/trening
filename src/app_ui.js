@@ -21,14 +21,14 @@ function cardHTML(ex,i,kind){
   const lev=!!ex.lv||ex.v.length>1;
   const im=vIdx(ex,'m'),it=vIdx(ex,'t');
   let views;
-  if(!lev||im===it){const who=i%2?'t':'m';const lab=ex.v.length>1?`Mama aj tato · ${ex.v[im].lab}`:'Mama aj tato rovnako';
+  if(!lev||im===it){const who=ex.who||(i%2?'t':'m');const lab=ex.tag||(ex.v.length>1?`Mama aj tato · ${ex.v[im].lab}`:'Mama aj tato rovnako');
     views=[{who,vi:im,tag:lab,cls:''}];}
   else views=[{who:'m',vi:im,tag:`Mama · ${ex.v[im].lab}`,cls:'m'},{who:'t',vi:it,tag:`Tato · ${ex.v[it].lab}`,cls:'t'}];
   const vh=views.map((w,k)=>`<div class="v3" data-k="${k}" data-who="${w.who}" data-vi="${w.vi}"><canvas></canvas><span class="tag ${w.cls}">${w.tag}</span><span class="ld">Načítavam 3D postavu…</span><span class="hint"><span class="h0">👆 ťukni a otoč</span><span class="h1">↔ otáčaj prstom · ťukni = hotovo</span></span><button class="rst" type="button" aria-label="Pôvodný pohľad">↺</button>${viewTools(ex)}</div>`).join('');
   let vrows='';
   if(ex.v.length>1) vrows='<div class="vrows">'+['m','t'].map(w=>{const x=vIdx(ex,w);return `<div class="vrow ${w}"><span class="who">${WHO[w]}</span><button type="button" data-ex="${ex.id}" data-who="${w}" data-d="-1" ${x===0?'disabled':''}>‹ ${ex.nav?ex.nav[0]:'Ľahšie'}</button><span class="vl">${ex.v[x].lab}</span><button type="button" data-ex="${ex.id}" data-who="${w}" data-d="1" ${x===ex.v.length-1?'disabled':''}>${ex.nav?ex.nav[1]:'Ťažšie'} ›</button></div>`;}).join('')+'</div>';
   const notes=[...new Set([im,it])].map(x=>ex.v[x].note?`<li><b>${ex.v[x].lab}:</b> ${ex.v[x].note}</li>`:'').join('');
-  const dose=ex.both?`<div class="both"><b>Obaja</b><span class="sets">${ex.both}</span></div>`:doseHTML(ex,'m')+doseHTML(ex,'t');
+  const dose=ex.both?`<div class="both"><b>${ex.who?WHO[ex.who]:'Obaja'}</b><span class="sets">${ex.both}</span></div>`:doseHTML(ex,'m')+doseHTML(ex,'t');
   return `<div class="ex" id="ex-${ex.id}"><div class="fig"><span class="num">${i+1}</span>${vh}</div>
    <div class="body"><h3>${ex.n}</h3>${vrows}<ol>${ex.how.map(h=>`<li>${h}</li>`).join('')}</ol>
    ${notes?`<ul class="vnote">${notes}</ul>`:''}

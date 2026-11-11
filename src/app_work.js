@@ -75,7 +75,7 @@ const sk=n=>n===1?'sekunda':n>=2&&n<=4?'sekundy':'sekúnd';
 function secsOf(r){const m=String(r||'').match(/(\d+)\s*s\b/);if(m)return +m[1];const mm=String(r||'').match(/(\d+)\s*min/);return mm?+mm[1]*60:0;}
 
 const SHORT={home:['h1','h2','h4','h7'],gym:['g1','g6','g4','h7'],fit:['f1','f4','f3','f9']};
-const exById=id=>[...WARM,...HOME,...GYM,...FIT,...COOL].find(x=>x.id===id);
+const exById=id=>[...WARM,...HOME,...GYM,...FIT,...COOL,...(window.DOPL_ALL||[])].find(x=>x.id===id);
 function wkStart(short){audioInit();const who=['m','t'].filter(w=>document.getElementById('ww-'+w).checked);if(!who.length){alert('Vyber, kto cvičí.');return;}
   const steps=[];if(short){['w1','w2'].forEach(id=>steps.push({ex:exById(id),part:'warm'}));SHORT[VAR].map(exById).filter(Boolean).forEach(ex=>steps.push({ex,part:'main'}));['c3','c4'].forEach(id=>steps.push({ex:exById(id),part:'cool'}));}
   else{WARM.forEach(ex=>steps.push({ex,part:'warm'}));MAINL().forEach(ex=>steps.push({ex,part:'main'}));COOL.forEach(ex=>steps.push({ex,part:'cool'}));}

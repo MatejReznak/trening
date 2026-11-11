@@ -333,7 +333,12 @@ function poseInstance(inst,p,opt){
     else if(hm==='up'){Nd=v3(0,1,0);}
     else if(hm==='fwd'){Nd=bodyFwd.clone();}
     else if(hm==='cup'){Nd=medial.clone().multiplyScalar(0.55).add(v3(0,0.85,0)).normalize();Dd=v3(0,1,0).addScaledVector(medial,0.35).addScaledVector(bodyFwd,0.25).normalize();}
+    else if(hm==='pd'){Nd=v3(0,-1,0);} /* dlaň dole voči predlaktiu */
     if(Nd.lengthSq()<1e-4) Nd=v3(0,-1,0);
+    /* zápästie: wr = pretočenie predlaktia (0 dlaň podľa režimu, 180 opačne), wf = ohyb zápästia (+ k dlani, − k chrbtu ruky) */
+    if(arm&&(arm.wr||arm.wf)){Nd.addScaledVector(Dd,-Nd.dot(Dd)).normalize();
+      if(arm.wr)Nd.applyAxisAngle(Dd,(s==='R'?1:-1)*arm.wr*D2R);
+      if(arm.wf){const c=Math.cos(arm.wf*D2R),sn=Math.sin(arm.wf*D2R);const D0=Dd.clone(),N0=Nd.clone();Dd=D0.clone().multiplyScalar(c).addScaledVector(N0,sn);Nd=N0.multiplyScalar(c).addScaledVector(D0,-sn);}}
     const hr=A.hand[s];
     const qRestH=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(hr.D,hr.N.clone().addScaledVector(hr.D,-hr.N.dot(hr.D)).normalize(),hr.D.clone().cross(hr.N).normalize()));
     const Nn=Nd.clone().addScaledVector(Dd,-Nd.dot(Dd)).normalize();

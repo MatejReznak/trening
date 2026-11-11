@@ -229,6 +229,11 @@ body.tvmode .wk{font-size:1.25rem}body.tvmode .wkscroll{flex-direction:row}body.
 body.tvmode .wkt,body.tvmode .warn,body.tvmode .prog,body.tvmode .vtools,body.tvmode .vinfo,body.tvmode .wkin label{display:none}
 body.tvmode .wkset{font-size:1.6rem}body.tvmode .vbr{font-size:1.5rem;padding:10px 22px;left:50%;transform:translateX(-50%);bottom:18px}body.tvmode .wkh b{font-size:1.6rem}
 body.tvmode .wktimer b{font-size:4rem}body.tvmode .wktimer{padding:20px 28px}#wkTv.on{background:var(--ink);color:#fff}
+.dgrp{background:#fff;border:1px solid var(--line);border-radius:18px;margin:12px 0;overflow:hidden}
+.dgrp>summary{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;list-style:none}.dgrp>summary::-webkit-details-marker{display:none}
+.dgrp .di{font-size:1.7rem}.dgrp .dt{flex:1;display:flex;flex-direction:column}.dgrp .dt b{font-size:1.08rem}.dgrp .dt small{color:var(--mute,#6b7280)}
+.dgrp .dch{font-size:1.5rem;transition:transform .2s;color:var(--mute,#6b7280)}.dgrp[open] .dch{transform:rotate(90deg)}
+.dgrp>*:not(summary){margin-left:12px;margin-right:12px}.dgrp .dfreq{background:#eef6ff;border-radius:12px;padding:10px 12px;margin-bottom:10px}.dgrp .list{margin-bottom:12px}
 </style>
 </head>
 <body>
@@ -254,6 +259,11 @@ body.tvmode .wktimer b{font-size:4rem}body.tvmode .wktimer{padding:20px 28px}#wk
 </div>
 <div class="cal" id="cal"></div>
 </section>
+<section class="tab" id="tab-dop" hidden>
+<h2>➕ Doplnkové cvičenia</h2>
+<div class="note">Tieto cviky sú <b>nepovinné</b> – nepočítajú sa do tréningov ani do kalendára. Ťukni na skupinu a zacvič si, čo práve potrebuješ.</div>
+<div id="doplBox"></div>
+</section>
 <section class="tab" id="tab-ex" hidden>
 <div class="note" id="lvNote"></div>
 <div class="grid2">
@@ -266,7 +276,8 @@ body.tvmode .wktimer b{font-size:4rem}body.tvmode .wktimer{padding:20px 28px}#wk
     <li>Drepy a výpady do hĺbky, ktorá nebolí. Vo výpade kratší krok.</li>
     <li>Kľúčové pre bedro: zdvih nohy v ľahu na boku, mostík a strečing flexora bedra.</li>
     <li>Ak bedro v drepe pichá, drepujte na stoličku (verzia „Ľahšie“).</li>
-    <li>Na turistike z kopca pomôžu paličky.</li></ul></div>
+    <li>Na turistike z kopca pomôžu paličky.</li>
+    <li><b>Pravý lakeť:</b> pri veslovaní a zhyboch zatiaľ ľahšie verzie, úchop nestláčaj silou. Cviky na lakeť sú v záložke Doplnky.</li></ul></div>
 </div>
 <div class="note w"><b>3D ukážky:</b> postava stále predvádza cvik. Ak si ju chceš otočiť, <b>ťukni na ňu</b> a potom ťahaj prstom. Ďalším ťuknutím otáčanie vypneš – pri skrolovaní sa nič nehýbe.</div>
 
@@ -327,7 +338,7 @@ body.tvmode .wktimer b{font-size:4rem}body.tvmode .wktimer{padding:20px 28px}#wk
 <p class="foot">3D postavy sú vytvorené z voľne použiteľných (CC0) modelov MakeHuman, upravené podľa fotiek. Odkazy na videá sú navyše (v angličtine). Plán je všeobecný a nenahrádza radu lekára ani fyzioterapeuta.</p>
 </section>
 </div>
-<nav class="tabs" id="tabs"><button type="button" data-tab="cal" class="on"><i>📅</i>Kalendár</button><button type="button" data-tab="ex"><i>🏋️</i>Cviky</button><button type="button" data-tab="prog"><i>📈</i>Pokrok</button><button type="button" data-tab="info"><i>ℹ️</i>Info</button></nav>
+<nav class="tabs" id="tabs"><button type="button" data-tab="cal" class="on"><i>📅</i>Kalendár</button><button type="button" data-tab="ex"><i>🏋️</i>Cviky</button><button type="button" data-tab="dop"><i>➕</i>Doplnky</button><button type="button" data-tab="prog"><i>📈</i>Pokrok</button><button type="button" data-tab="info"><i>ℹ️</i>Info</button></nav>
 <div class="wk" id="wk" hidden>
   <div class="wktop"><button type="button" id="wkX" aria-label="Zavrieť">✕</button><div class="wkh" id="wkHead"></div><button type="button" id="wkTv" class="wklvb" title="Veľký režim na televízor (AirPlay)">📺 TV</button><button type="button" id="wkLv" class="wklvb">Úroveň</button><button type="button" id="wkVoice">🔊</button></div>
   <div class="wklvbox" id="wkLvBox" hidden></div>

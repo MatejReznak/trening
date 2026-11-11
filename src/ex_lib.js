@@ -290,3 +290,38 @@ Object.assign(ANIM,{
 
 ANIM.backSquatR=L=>{const a=ANIM.backSquat(L);a.props=[['rack',{y:Y3(shOf(L,a.k[0])[1])-0.05}]];return a;};
 ANIM.lungeBBR=L=>{const a=ANIM.lungeBB(L);a.props=[['rack',{y:Y3(shOf(L,a.k[0])[1])-0.05,x:-0.55}]];return a;};
+
+/* ===== Doplnkové cvičenia: lakeť (pravá ruka = na), SM systém, strečing ===== */
+(function(){
+ const fore=(L,o)=>Object.assign({a:[4,88],sp:0.6},o||{});           // lakeť pri tele, predlaktie vodorovne dopredu
+ const rest={a:[-2,-1],sp:1.6};
+ const handAt=(L,p,a)=>{const sh=shOf(L,p);const e=[sh[0]+L.UA*Math.sin(dg(a[0])),sh[1]+L.UA*Math.cos(dg(a[0]))];return [e[0]+L.FA*Math.sin(dg(a[1])),e[1]+L.FA*Math.cos(dg(a[1]))];};
+ const across=L=>-(2*L.shW+0.6);                                    // ľavá ruka siaha k pravej
+ Object.assign(ANIM,{
+  elbStretch:L=>{const s=standP(L);const A=[72,76];const h=handAt(L,s,A);const lh=[h[0]+3.2,h[1]+5.2];
+    const mk=wf=>mix(s,{na:{a:A,sp:-1.5,wf},fa:{to:lh,b:1,sp:across(L)+3.2,spE:-2}});
+    return {k:[mk(25),mk(72)],durs:[1500,1500],holds:[400,5000],hand:{R:'pd',L:'pd'},curl:{R:0.15,L:0.5}};},
+  elbIso:L=>{const s=standP(L);const A=[4,88];const h=handAt(L,s,A);const lh=[h[0]+3.5,h[1]-2.6];
+    const mk=wf=>mix(s,{na:fore(L,{wf}),fa:{to:lh,b:1,sp:across(L)+1.2,spE:-1}});
+    return {k:[mk(-22),mk(-26)],durs:[900,900],holds:[2600,2600],hand:{R:'pd',L:'pd'},curl:{R:0.9,L:0.2}};},
+  elbEcc:L=>{const s=standP(L);const mk=wf=>mix(s,{na:fore(L,{wf}),fa:rest});
+    return {k:[mk(-42),mk(48)],durs:[4600,1300],holds:[300,300],hand:{R:'pd'},curl:{R:1},dyn:'db1'};},
+  elbExt:L=>{const s=standP(L);const mk=wf=>mix(s,{na:fore(L,{wf}),fa:rest});
+    return {k:[mk(40),mk(-42)],durs:[2200,3000],holds:[300,500],hand:{R:'pd'},curl:{R:1},dyn:'db1'};},
+  elbRot:L=>{const s=standP(L);const mk=wr=>mix(s,{na:fore(L,{wr}),fa:rest});
+    return {k:[mk(10),mk(170)],durs:[2400,2400],holds:[400,400],hand:{R:'pd'},curl:{R:1},dyn:'db1'};},
+  elbGrip:L=>{const s=standP(L);const mk=c=>mix(s,{na:fore(L,{wr:90}),fa:rest,curl:{R:c,L:0.25}});
+    return {k:[mk(0.45),mk(0.8)],durs:[900,900],holds:[300,4500],hand:{R:'pd'},dyn:'ballR'};},
+  /* SM systém – elastické lano uviazané o nohu stola */
+  smBack:L=>{const s=standP(L,{nl:{to:[102.5,FYa(L)],sp:2.4},fl:{to:[97.5,FYa(L)],sp:2.4}});const mk=(a,sp)=>mix(s,{na:{a,sp},fa:{a,sp}});
+    return {k:[mk([42,50],0.5),mk([-32,-20],2.2)],durs:[1800,2200],holds:[400,700],hand:{all:'pron'},curl:{all:1},dyn:'smF',props:[['smTable',{}]]};},
+  smBackOne:L=>{const s=standP(L,{nl:{to:[102.5,FYa(L)],sp:2.4},fl:{to:[97.5,FYa(L)],sp:2.4}});const F={a:[42,50],sp:0.5},B={a:[-34,-22],sp:2.2};
+    const mk=(n,f)=>mix(s,{na:n,fa:f});
+    return {k:[mk(F,F,0),mk(B,F,10),mk(F,F,0),mk(F,B,-10),mk(F,F,0)],dur:1900,hold:500,hand:{all:'pron'},curl:{all:1},dyn:'smF',props:[['smTable',{}]]};},
+  smFwd:L=>{const s=standP(L,{nl:{to:[102.5,FYa(L)],sp:2.4},fl:{to:[97.5,FYa(L)],sp:2.4}});const mk=(a,sp)=>mix(s,{na:{a,sp},fa:{a,sp}});
+    return {k:[mk([-26,-12],2.4),mk([52,60],0.4)],durs:[1800,2200],holds:[400,700],hand:{all:'pron'},curl:{all:1},dyn:'smB',props:[['smTable',{back:1}]]};},
+  smFwdOne:L=>{const s=standP(L,{nl:{to:[102.5,FYa(L)],sp:2.4},fl:{to:[97.5,FYa(L)],sp:2.4}});const B={a:[-26,-12],sp:2.4},F={a:[54,62],sp:0.4};
+    const mk=(n,f)=>mix(s,{na:n,fa:f});
+    return {k:[mk(B,B,0),mk(F,B,-10),mk(B,B,0),mk(B,F,10),mk(B,B,0)],dur:1900,hold:500,hand:{all:'pron'},curl:{all:1},dyn:'smB',props:[['smTable',{back:1}]]};}
+ });
+})();

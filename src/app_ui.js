@@ -24,11 +24,13 @@ function cardHTML(ex,i,kind){
   if(!lev||im===it){const who=ex.who||(i%2?'t':'m');const lab=ex.tag||(ex.v.length>1?`Mama aj tato · ${ex.v[im].lab}`:'Mama aj tato rovnako');
     views=[{who,vi:im,tag:lab,cls:''}];}
   else views=[{who:'m',vi:im,tag:`Mama · ${ex.v[im].lab}`,cls:'m'},{who:'t',vi:it,tag:`Tato · ${ex.v[it].lab}`,cls:'t'}];
+  if(ex.who){const x=vIdx(ex,ex.who);views=[{who:ex.who,vi:x,tag:(ex.tag||WHO[ex.who])+(ex.v.length>1?' · '+ex.v[x].lab:''),cls:ex.who}];}
   const vh=views.map((w,k)=>`<div class="v3" data-k="${k}" data-who="${w.who}" data-vi="${w.vi}"><canvas></canvas><span class="tag ${w.cls}">${w.tag}</span><span class="ld">Načítavam 3D postavu…</span><span class="hint"><span class="h0">👆 ťukni a otoč</span><span class="h1">↔ otáčaj prstom · ťukni = hotovo</span></span><button class="rst" type="button" aria-label="Pôvodný pohľad">↺</button>${viewTools(ex)}</div>`).join('');
   let vrows='';
-  if(ex.v.length>1) vrows='<div class="vrows">'+['m','t'].map(w=>{const x=vIdx(ex,w);return `<div class="vrow ${w}"><span class="who">${WHO[w]}</span><button type="button" data-ex="${ex.id}" data-who="${w}" data-d="-1" ${x===0?'disabled':''}>‹ ${ex.nav?ex.nav[0]:'Ľahšie'}</button><span class="vl">${ex.v[x].lab}</span><button type="button" data-ex="${ex.id}" data-who="${w}" data-d="1" ${x===ex.v.length-1?'disabled':''}>${ex.nav?ex.nav[1]:'Ťažšie'} ›</button></div>`;}).join('')+'</div>';
+  if(ex.v.length>1) vrows='<div class="vrows">'+(ex.who?[ex.who]:['m','t']).map(w=>{const x=vIdx(ex,w);return `<div class="vrow ${w}"><span class="who">${WHO[w]}</span><button type="button" data-ex="${ex.id}" data-who="${w}" data-d="-1" ${x===0?'disabled':''}>‹ ${ex.nav?ex.nav[0]:'Ľahšie'}</button><span class="vl">${ex.v[x].lab}</span><button type="button" data-ex="${ex.id}" data-who="${w}" data-d="1" ${x===ex.v.length-1?'disabled':''}>${ex.nav?ex.nav[1]:'Ťažšie'} ›</button></div>`;}).join('')+'</div>';
   const notes=[...new Set([im,it])].map(x=>ex.v[x].note?`<li><b>${ex.v[x].lab}:</b> ${ex.v[x].note}</li>`:'').join('');
-  const dose=ex.both?`<div class="both"><b>${ex.who?WHO[ex.who]:'Obaja'}</b><span class="sets">${ex.both}</span></div>`:doseHTML(ex,'m')+doseHTML(ex,'t');
+  const vd=ex.who&&ex.v[vIdx(ex,ex.who)].dose;
+  const dose=vd?`<div class="both"><b>${WHO[ex.who]}</b><span class="sets">${vd}</span></div>`:ex.both?`<div class="both"><b>${ex.who?WHO[ex.who]:'Obaja'}</b><span class="sets">${ex.both}</span></div>`:doseHTML(ex,'m')+doseHTML(ex,'t');
   return `<div class="ex" id="ex-${ex.id}"><div class="fig"><span class="num">${i+1}</span>${vh}</div>
    <div class="body"><h3>${ex.n}</h3>${vrows}<ol>${ex.how.map(h=>`<li>${h}</li>`).join('')}</ol>
    ${notes?`<ul class="vnote">${notes}</ul>`:''}
@@ -138,7 +140,7 @@ function fill(id,list){
   [...el.children].forEach((c,i)=>registerViews(c,list[i],i));
 }
 function rerenderCard(exId){
-  const lists={warm:WARM,main:MAINL(),cool:COOL};
+  const lists={warm:WARM,main:MAINL(),cool:COOL};(window.DOPL||[]).forEach(g=>{if(document.getElementById('dl-'+g.id)&&document.getElementById('dl-'+g.id).children.length)lists['d_'+g.id]=g.ex;});
   for(const id in lists){const i=lists[id].findIndex(e=>e.id===exId);if(i<0)continue;
     const old=document.getElementById('ex-'+exId);unregisterViews(old);
     const tmp=document.createElement('div');tmp.innerHTML=cardHTML(lists[id][i],i);const nc=tmp.firstElementChild;old.replaceWith(nc);registerViews(nc,lists[id][i],i);}
@@ -155,7 +157,7 @@ const LVN=['začiatočník','mierne pokročilý','pokročilý','veľmi pokročil
 function lvNote(){return `<b>Mama:</b> úroveň ${LV.m} (${LVN[LV.m-1]}) · <b>Tato:</b> úroveň ${LV.t} (${LVN[LV.t-1]}). Úroveň mení verziu cvikov, počet sérií, opakovaní aj váhu; pri ťažších verziách pribudnú pod popisom aj ich vlastné pokyny. Pri každom cviku sa dá ešte prepnúť <b>‹ Ľahšie / Ťažšie ›</b>.`;}
 ['segVar','segVar2'].forEach(id=>{const g=document.getElementById(id);g&&g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;VAR=b.dataset.v;save();build();});});
 document.querySelectorAll('.lvseg').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const who=g.dataset.who;LV[who]=+b.dataset.l;for(const k in OV){if(OV[k])delete OV[k][who];}save();build();}));
-document.addEventListener('click',e=>{const b=e.target.closest('.vrow button');if(!b)return;const ex=[...WARM,...HOME,...GYM,...FIT,...COOL].find(x=>x.id===b.dataset.ex);if(!ex)return;
+document.addEventListener('click',e=>{const b=e.target.closest('.vrow button');if(!b)return;const ex=[...WARM,...HOME,...GYM,...FIT,...COOL,...(window.DOPL_ALL||[])].find(x=>x.id===b.dataset.ex);if(!ex)return;
   const who=b.dataset.who;const cur=vIdx(ex,who);OV[ex.id]=OV[ex.id]||{};OV[ex.id][who]=clamp(cur+(+b.dataset.d),0,ex.v.length-1);save();rerenderCard(ex.id);});
 /* timer */
 (function(){let end=0,tid=null,ac=null;const tv=document.getElementById('tv'),box=document.getElementById('timer');if(!box)return;const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');

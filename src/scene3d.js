@@ -40,7 +40,7 @@ function propMats(){if(PMAT)return PMAT;
     homeF:S(0xd2cec8,.5,0,{map:MAPS.floorWood(),envMapIntensity:.55}),
     fitF:S(0xb8c0c8,.9,0,{map:MAPS.rubber(),normalMap:NRM.rubber(),envMapIntensity:.55}),
     leaf:S(0x4f8a4a,.7,0,{side:THREE.DoubleSide}),pot:S(0xd8cdbd,.6),kb:S(0x222428,.45,.3),plate:S(0x1c1e21,.5,.2),plateR:S(0xc0392b,.5,.1),cushion:S(0xb7c6c2,.95),sofa:S(0xcfc2b0,.9),
-    rubberC:S(0x111214,.8),silver:S(0xc5ccd3,.3,.85),smRope:S(0xd8262c,.7),
+    rubberC:S(0x111214,.8),silver:S(0xc5ccd3,.3,.85),smRope:S(0x1f6fd6,.7),
     wallH:S(0xe2d5c1,.95,0,{map:WG(),envMapIntensity:.5}),wallG:S(0xb4bcc3,.95,0,{map:WG(),envMapIntensity:.5}),wallGd:S(0x3b4046,.9,0,{envMapIntensity:.6}),wallF:S(0x333940,.9,0,{map:WG(),envMapIntensity:.6}),wallFl:S(0xb9c1c8,.95,0,{map:WG(),envMapIntensity:.5}),trim:S(0xf6f3ee,.7),curtain:S(0xd9c9b2,.95),
     mirror:S(0xd3dce4,.07,.95,{envMapIntensity:1.25}),frameW:S(0x8a6b4a,.6),clock:S(0xf4f4f2,.5),
     book:[0xb5523b,0x2f6f8f,0xd9a441,0x4d7c5a,0x6b5b95,0xe8e2d6].map(c=>S(c,.8)),
@@ -192,7 +192,7 @@ function buildDyn(sc,inst,dyn,props){
   else if(dyn==='bandKnees') D.objs=[makeBand(sc,propMats().bandB)];
   else if(dyn==='bandHam') D.objs=[makeBand(sc),makeBand(sc)];
   else if(dyn==='ballR'){const m=new THREE.Mesh(new THREE.SphereGeometry(0.036,20,14),new THREE.MeshStandardMaterial({color:0xf2c230,roughness:.8}));m.castShadow=true;sc.add(m);D.objs=[m];}
-  else if(dyn==='smF'||dyn==='smB'){D.objs=[makeBand(sc,propMats().smRope),makeBand(sc,propMats().smRope)];D.objs.forEach(o=>o.scale.x=o.scale.z=1.25);}
+  else if(dyn==='smF'||dyn==='smB'){D.objs=[0,1,2,3].map(()=>makeBand(sc,propMats().smRope));}
   return D;
 }
 function updateDyn(D,inst){
@@ -200,7 +200,12 @@ function updateDyn(D,inst){
   if(t==='db2'){['R','L'].forEach((s,i)=>orientY(o[i],gripOf(inst,s),palmAxis(inst,s)));}
   else if(t==='db1'){orientY(o[0],gripOf(inst,'R'),palmAxis(inst,'R'));}
   else if(t==='ballR'){o[0].position.copy(gripOf(inst,'R'));}
-  else if(t==='smF'||t==='smB'){const an=v3(t==='smF'?SMX:-SMX,SMY,0);['R','L'].forEach((s,i)=>{placeSeg3(o[i],an,gripOf(inst,s));o[i].scale.x=o[i].scale.z=1.25;});}
+  else if(t==='smF'||t==='smB'){const dir=t==='smF'?1:-1;const an=v3(dir*SMX,SMY,0);const WZ=inst.A.L.waistW/U60+0.075,xv=dir*0.2;
+    /* lano vedie popri bokoch, nie cez telo: úchyt -> bod vedľa boku -> ruka */
+    ['R','L'].forEach((s,i)=>{const h=gripOf(inst,s);const a=o[i],b=o[i+2];
+      if(dir*(h.x-xv)>=0){placeSeg3(a,an,h);b.visible=false;}
+      else{const f=Math.max(0,Math.min(1,(xv-an.x)/(h.x-an.x)));const via=v3(xv,an.y+(h.y-an.y)*f*0.9,(s==='R'?1:-1)*Math.max(Math.abs(h.z)+0.01,WZ));placeSeg3(a,an,via);placeSeg3(b,via,h);b.visible=true;b.scale.x=b.scale.z=1.25;}
+      a.scale.x=a.scale.z=1.25;});}
   else if(t==='goblet'){const a=palmOf(inst,'R'),b=palmOf(inst,'L');const c=a.clone().lerp(b,.5);
     const fw=boneWorld(inst,'spine01',inst.A.lm.shC.clone().add(v3(0.2,0,0))).sub(boneWorld(inst,'spine01',inst.A.lm.shC));fw.y=0;fw.normalize();
     orientY(o[0],c.addScaledVector(fw,0.022).add(v3(0,-0.055,0)),v3(0,1,0));}
